@@ -21,7 +21,7 @@ const { THEMES_AREA, TITLEBAR_AREAS, PALETTE_AREA, host, requestTheme, useTheme,
 const profileKey = name => (name ?? '').trim() || 'default'
 
 const PLUGIN_ID = 'hermes-skin-rounded'
-const THEME_NAME = 'claude'
+const THEME_NAME = 'rounded'
 const STYLE_ID = 'hermes-skin-rounded-style'
 
 /** Optional name for the empty-state greeting: '' → "Good evening", 'Ada' → "Good evening, Ada". */
@@ -94,7 +94,7 @@ const dark = {
 
 const theme = {
   name: THEME_NAME,
-  label: 'Claude',
+  label: 'Rounded',
   description: 'Claude desktop — cream light, near-black dark, terracotta accent',
   colors: light,
   darkColors: dark,
@@ -224,7 +224,7 @@ const PALETTES = [
 
 const EXTRA_THEMES = PALETTES.map(([slug, label, description, lightP, darkP, typography]) => ({
   name: `${THEME_NAME}-${slug}`,
-  label: `Claude - ${label}`,
+  label: `Rounded - ${label}`,
   description: `${description} (Claude layout)`,
   colors: expand(lightP),
   darkColors: expand(darkP),
@@ -234,7 +234,7 @@ const EXTRA_THEMES = PALETTES.map(([slug, label, description, lightP, darkP, typ
 // ── Layout stylesheet ───────────────────────────────────────────────────────
 // Everything is scoped to the active theme so it switches off with it.
 
-const S = 'html[data-hermes-theme^="claude"]'
+const S = 'html[data-hermes-theme^="rounded"]'
 
 const CSS = `
 /* ── tokens ─────────────────────────────────────────────────────────────── */
@@ -428,14 +428,14 @@ ${S} [data-tour="sidebar-nav-cron"]::after { content: "Scheduled"; font-size: 0.
 ${S} [data-slot="sidebar-content"] > div:has(input[aria-label="Search sessions"]):not(:has(input:focus)):not(:has(input:not(:placeholder-shown))) {
   height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden;
 }
-${S} #claude-skin-search {
+${S} #rounded-skin-search {
   display: inline-grid; place-items: center;
   width: 24px; height: 24px; margin-left: 2px;
   border-radius: 4px; background: transparent; border: 0;
   color: inherit; opacity: 0.55; cursor: pointer;
 }
-${S} #claude-skin-search:hover { opacity: 1; background: var(--chrome-action-hover); }
-html:not([data-hermes-theme^="claude"]) #claude-skin-search { display: none; }
+${S} #rounded-skin-search:hover { opacity: 1; background: var(--chrome-action-hover); }
+html:not([data-hermes-theme^="rounded"]) #rounded-skin-search { display: none; }
 
 /* ── sidebar ─────────────────────────────────────────────────────────────── */
 ${S} [data-slot="sidebar"] { border-right-color: var(--dt-sidebar-border) !important; }
@@ -467,24 +467,24 @@ ${S} [data-sidebar="menu-button"]:has([data-tour="sidebar-nav-capabilities"]) > 
 /* "More": New, Artifacts and Customize stay out; every other nav row folds
    under a chevron row like Claude's. The row is injected by register() and
    the open state lives on <html> (remembered in plugin storage). */
-${S} ul[data-sidebar="menu"]:has(> [data-claude-more]) > li { order: 4; }
-${S} ul[data-sidebar="menu"]:has(> [data-claude-more]) > li:has([data-tour="sidebar-nav-new-session"]) { order: 0; }
-${S} ul[data-sidebar="menu"]:has(> [data-claude-more]) > li:has([data-tour="sidebar-nav-artifacts"]) { order: 1; }
-${S} ul[data-sidebar="menu"]:has(> [data-claude-more]) > li:has([data-tour="sidebar-nav-capabilities"]) { order: 2; }
-${S} ul[data-sidebar="menu"]:has(> [data-claude-more]) > li[data-claude-more] { order: 3; }
-${S}:not([data-claude-nav-more]) ul[data-sidebar="menu"]:has(> [data-claude-more]) > li:not([data-claude-more]):not(:has([data-tour="sidebar-nav-new-session"], [data-tour="sidebar-nav-artifacts"], [data-tour="sidebar-nav-capabilities"])) { display: none; }
+${S} ul[data-sidebar="menu"]:has(> [data-rounded-more]) > li { order: 4; }
+${S} ul[data-sidebar="menu"]:has(> [data-rounded-more]) > li:has([data-tour="sidebar-nav-new-session"]) { order: 0; }
+${S} ul[data-sidebar="menu"]:has(> [data-rounded-more]) > li:has([data-tour="sidebar-nav-artifacts"]) { order: 1; }
+${S} ul[data-sidebar="menu"]:has(> [data-rounded-more]) > li:has([data-tour="sidebar-nav-capabilities"]) { order: 2; }
+${S} ul[data-sidebar="menu"]:has(> [data-rounded-more]) > li[data-rounded-more] { order: 3; }
+${S}:not([data-rounded-nav-more]) ul[data-sidebar="menu"]:has(> [data-rounded-more]) > li:not([data-rounded-more]):not(:has([data-tour="sidebar-nav-new-session"], [data-tour="sidebar-nav-artifacts"], [data-tour="sidebar-nav-capabilities"])) { display: none; }
 /* Nothing to fold → no row. */
-${S} ul[data-sidebar="menu"]:not(:has(> li:not([data-claude-more]):not(:has([data-tour="sidebar-nav-new-session"], [data-tour="sidebar-nav-artifacts"], [data-tour="sidebar-nav-capabilities"])))) > [data-claude-more] { display: none; }
-html:not([data-hermes-theme^="claude"]) [data-claude-more] { display: none; }
-${S} [data-claude-more] > button {
+${S} ul[data-sidebar="menu"]:not(:has(> li:not([data-rounded-more]):not(:has([data-tour="sidebar-nav-new-session"], [data-tour="sidebar-nav-artifacts"], [data-tour="sidebar-nav-capabilities"])))) > [data-rounded-more] { display: none; }
+html:not([data-hermes-theme^="rounded"]) [data-rounded-more] { display: none; }
+${S} [data-rounded-more] > button {
   display: flex; align-items: center; width: 100%;
   background: transparent; border: 0; cursor: pointer; font: inherit;
   color: var(--dt-muted-foreground);
 }
-${S} [data-claude-more] > button > i { opacity: 0.7; transition: transform 120ms; }
-${S}[data-claude-nav-more] [data-claude-more] > button > i { transform: rotate(180deg); }
-${S} [data-claude-more] > button > span::after { content: "More"; }
-${S}[data-claude-nav-more] [data-claude-more] > button > span::after { content: "Less"; }
+${S} [data-rounded-more] > button > i { opacity: 0.7; transition: transform 120ms; }
+${S}[data-rounded-nav-more] [data-rounded-more] > button > i { transform: rotate(180deg); }
+${S} [data-rounded-more] > button > span::after { content: "More"; }
+${S}[data-rounded-nav-more] [data-rounded-more] > button > span::after { content: "Less"; }
 
 /* Section labels ("Pinned", "Sessions") → quiet, sentence case, muted. */
 ${S} .group\\/section-label > span {
@@ -602,7 +602,7 @@ ${S} [data-slot="aui_intro"] > div::before {
   color: var(--dt-primary);
 }
 ${S} [data-slot="aui_intro"] > div::after {
-  content: var(--claude-greeting, "${GREETING_NAME ? `Hello, ${GREETING_NAME}` : 'Hello'}");
+  content: var(--rounded-greeting, "${GREETING_NAME ? `Hello, ${GREETING_NAME}` : 'Hello'}");
   order: 2;
   font-family: var(--claude-font-serif);
   font-size: 2.25rem;
@@ -638,29 +638,29 @@ ${S} [data-chat-surface]:has([data-slot="aui_intro"]) button[aria-label="Scroll 
 
 /* Claude's account row: the square profile rail gives way to one
    "avatar · name · model ⌄" row whose menu opens upward. Other themes keep the rail. */
-#claude-skin-profile { display: none; }
+#rounded-skin-profile { display: none; }
 ${S} [data-slot="sidebar-content"] div:has(> [data-slot="profile-rail"]) { display: none; }
-${S} #claude-skin-profile {
+${S} #rounded-skin-profile {
   display: block; position: relative; flex-shrink: 0;
   margin: 0.25rem -0.125rem 0.375rem; font-family: var(--dt-font-sans);
 }
-${S} #claude-skin-profile .cs-row {
+${S} #rounded-skin-profile .cs-row {
   display: flex; align-items: center; gap: 0.5rem; width: 100%;
   padding: 0.375rem 0.5rem; border-radius: 0.5rem; text-align: left;
   color: var(--dt-foreground); font-size: 0.875rem;
 }
-${S} #claude-skin-profile .cs-row:hover,
-${S} #claude-skin-profile[data-open] > .cs-row { background: var(--claude-row-hover); }
-${S} #claude-skin-profile .cs-avatar {
+${S} #rounded-skin-profile .cs-row:hover,
+${S} #rounded-skin-profile[data-open] > .cs-row { background: var(--claude-row-hover); }
+${S} #rounded-skin-profile .cs-avatar {
   display: grid; place-items: center; flex-shrink: 0;
   width: 1.375rem; height: 1.375rem; border-radius: 999px;
   font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; color: #fff;
 }
-${S} #claude-skin-profile .cs-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-${S} #claude-skin-profile .cs-sub { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--dt-muted-foreground); font-size: 0.75rem; }
-${S} #claude-skin-profile .cs-row > .codicon { margin-left: 0.125rem; color: var(--dt-muted-foreground); font-size: 0.75rem; transition: transform 120ms; }
-${S} #claude-skin-profile[data-open] > .cs-row > .codicon { transform: rotate(180deg); }
-${S} #claude-skin-profile .cs-menu {
+${S} #rounded-skin-profile .cs-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+${S} #rounded-skin-profile .cs-sub { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--dt-muted-foreground); font-size: 0.75rem; }
+${S} #rounded-skin-profile .cs-row > .codicon { margin-left: 0.125rem; color: var(--dt-muted-foreground); font-size: 0.75rem; transition: transform 120ms; }
+${S} #rounded-skin-profile[data-open] > .cs-row > .codicon { transform: rotate(180deg); }
+${S} #rounded-skin-profile .cs-menu {
   position: absolute; left: 0; right: 0; bottom: calc(100% + 0.375rem); z-index: 50;
   display: none; padding: 0.375rem;
   max-height: 60vh; overflow-y: auto;
@@ -668,20 +668,20 @@ ${S} #claude-skin-profile .cs-menu {
   border: 1px solid var(--dt-sidebar-border); border-radius: 0.75rem;
   box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.25);
 }
-${S} #claude-skin-profile[data-open] .cs-menu { display: block; }
-${S} #claude-skin-profile .cs-head { padding: 0.25rem 0.5rem 0.375rem; color: var(--dt-muted-foreground); font-size: 0.8125rem; }
-${S} #claude-skin-profile .cs-item {
+${S} #rounded-skin-profile[data-open] .cs-menu { display: block; }
+${S} #rounded-skin-profile .cs-head { padding: 0.25rem 0.5rem 0.375rem; color: var(--dt-muted-foreground); font-size: 0.8125rem; }
+${S} #rounded-skin-profile .cs-item {
   display: flex; align-items: center; gap: 0.625rem; width: 100%;
   padding: 0.375rem 0.5rem; border-radius: 0.375rem; text-align: left; font-size: 0.875rem;
 }
-${S} #claude-skin-profile .cs-item:hover,
-${S} #claude-skin-profile .cs-item:focus-visible { background: var(--claude-row-hover); outline: none; }
-${S} #claude-skin-profile .cs-item .cs-avatar { width: 1.125rem; height: 1.125rem; font-size: 0.5625rem; }
-${S} #claude-skin-profile .cs-item > .codicon { width: 1.125rem; text-align: center; font-size: 0.9375rem; }
-${S} #claude-skin-profile .cs-item .cs-text { display: flex; min-width: 0; flex-direction: column; }
-${S} #claude-skin-profile .cs-kbd { margin-left: auto; color: var(--dt-muted-foreground); font-size: 0.75rem; }
-${S} #claude-skin-profile .cs-sep { height: 1px; margin: 0.375rem 0.25rem; background: var(--dt-sidebar-border); }
-${S} #claude-skin-profile .cs-empty { padding: 0.375rem 0.5rem; color: var(--dt-muted-foreground); font-size: 0.8125rem; }
+${S} #rounded-skin-profile .cs-item:hover,
+${S} #rounded-skin-profile .cs-item:focus-visible { background: var(--claude-row-hover); outline: none; }
+${S} #rounded-skin-profile .cs-item .cs-avatar { width: 1.125rem; height: 1.125rem; font-size: 0.5625rem; }
+${S} #rounded-skin-profile .cs-item > .codicon { width: 1.125rem; text-align: center; font-size: 0.9375rem; }
+${S} #rounded-skin-profile .cs-item .cs-text { display: flex; min-width: 0; flex-direction: column; }
+${S} #rounded-skin-profile .cs-kbd { margin-left: auto; color: var(--dt-muted-foreground); font-size: 0.75rem; }
+${S} #rounded-skin-profile .cs-sep { height: 1px; margin: 0.375rem 0.25rem; background: var(--dt-sidebar-border); }
+${S} #rounded-skin-profile .cs-empty { padding: 0.375rem 0.5rem; color: var(--dt-muted-foreground); font-size: 0.8125rem; }
 `
 
 // ── Greeting clock ──────────────────────────────────────────────────────────
@@ -693,7 +693,7 @@ function greeting() {
 }
 
 function paintGreeting() {
-  document.documentElement.style.setProperty('--claude-greeting', JSON.stringify(greeting()))
+  document.documentElement.style.setProperty('--rounded-greeting', JSON.stringify(greeting()))
 }
 
 // ── Account row: Claude's bottom-left "avatar · name · plan ⌄" ─────────────
@@ -710,7 +710,7 @@ const shortModel = m => (m || '').split('/').pop().replace(/^claude-/, '')
 
 function mountProfileRow(ctx) {
   const root = document.createElement('div')
-  root.id = 'claude-skin-profile'
+  root.id = 'rounded-skin-profile'
   root.style.order = '99' // after the session list whatever React appends later
   let profiles = []
 
@@ -818,7 +818,7 @@ function FirstRun({ storage }) {
 
 export default {
   id: PLUGIN_ID,
-  name: 'Claude skin',
+  name: 'Hermes Skin Rounded',
   description: 'Claude desktop look: cream/charcoal palette, centered column, rounded composer.',
   defaultEnabled: true,
   register(ctx) {
@@ -846,9 +846,9 @@ export default {
     }
     const ensureSearchButton = () => {
       const cluster = document.querySelector('[data-titlebar-cluster="left"]')
-      if (!cluster || cluster.querySelector('#claude-skin-search')) return
+      if (!cluster || cluster.querySelector('#rounded-skin-search')) return
       const btn = document.createElement('button')
-      btn.id = 'claude-skin-search'
+      btn.id = 'rounded-skin-search'
       btn.type = 'button'
       btn.setAttribute('aria-label', 'Search sessions')
       btn.innerHTML = '<i class="codicon codicon-search" aria-hidden="true" style="font-size:13.9px"></i>'
@@ -857,17 +857,17 @@ export default {
     }
     // "More" row at the end of the nav list; CSS orders it after New /
     // Artifacts / Customize and folds everything else behind it.
-    const MORE_ATTR = 'data-claude-nav-more'
+    const MORE_ATTR = 'data-rounded-nav-more'
     const setMoreOpen = open => {
       document.documentElement.toggleAttribute(MORE_ATTR, open)
       ctx.storage.set('navMore', open)
     }
     const ensureMoreRow = () => {
       const menu = document.querySelector('ul[data-sidebar="menu"]:has([data-tour="sidebar-nav-new-session"])')
-      if (!menu || menu.querySelector('[data-claude-more]')) return
+      if (!menu || menu.querySelector('[data-rounded-more]')) return
       const row = document.createElement('li')
-      row.id = 'claude-skin-more'
-      row.setAttribute('data-claude-more', '')
+      row.id = 'rounded-skin-more'
+      row.setAttribute('data-rounded-more', '')
       row.setAttribute('data-sidebar', 'menu-item')
       row.innerHTML =
         '<button type="button" data-sidebar="menu-button" aria-label="More"><i class="codicon codicon-chevron-down" aria-hidden="true"></i><span></span></button>'
@@ -883,12 +883,12 @@ export default {
       ensureSearchButton()
       ensureMoreRow()
     }, 1000)
-    ctx.onDispose(() => document.getElementById('claude-skin-search')?.remove())
+    ctx.onDispose(() => document.getElementById('rounded-skin-search')?.remove())
     ctx.onDispose(() => {
-      document.getElementById('claude-skin-more')?.remove()
+      document.getElementById('rounded-skin-more')?.remove()
       document.documentElement.removeAttribute(MORE_ATTR)
     })
-    ctx.onDispose(() => document.documentElement.style.removeProperty('--claude-greeting'))
+    ctx.onDispose(() => document.documentElement.style.removeProperty('--rounded-greeting'))
 
     ctx.registerMany([
       { id: 'theme', area: THEMES_AREA, data: theme },
@@ -897,7 +897,7 @@ export default {
         id: `use-${t.name}`,
         area: PALETTE_AREA,
         data: {
-          id: `claude-skin.use.${t.name}`,
+          id: `rounded-skin.use.${t.name}`,
           label: `Theme: ${t.label}`,
           keywords: ['theme', 'palette', 'skin', 'claude', t.label.toLowerCase()],
           run: () => requestTheme(t.name)
@@ -908,8 +908,8 @@ export default {
         id: 'apply',
         area: PALETTE_AREA,
         data: {
-          id: 'claude-skin.apply',
-          label: 'Claude skin: Apply theme',
+          id: 'rounded-skin.apply',
+          label: 'Rounded skin: Apply theme',
           keywords: ['claude', 'theme', 'skin', 'appearance'],
           run: () => requestTheme(THEME_NAME)
         }
