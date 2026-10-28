@@ -10,8 +10,10 @@ vm.createContext(sandbox); vm.runInContext(source, sandbox)
 const dir = mkdtempSync(join(tmpdir(), 'rounded-layout-'))
 const group = (id, sidebar = false) => `<section data-tree-group="${id}"><header data-panel-header style="height:34px"><div data-zone-tabstrip="${id}"><div role="tablist"><div role="tab" data-closeable="true"><span class="pane-tab-content"><span><span class="uppercase">A very long workspace title that must not overflow its tab</span></span></span><span class="close-wrap"><button aria-label="Close">x</button></span></div></div></div></header><div data-zone-body="${id}" style="display:contents"><div class="body">${sidebar ? '<div data-slot="sidebar-content">Sidebar</div>' : '<aside data-preview-browser="test"><div><div class="viewport"><div><webview></webview></div></div></div></aside>'}</div></div></section>`
 const fixtures = ['left','right','split','bottom','hidden'].map(mode => `<main data-case="${mode}" style="display:flex;${mode === 'bottom' ? 'flex-direction:column;' : ''}">${mode === 'left' ? group('custom-sidebar',true) : ''}${group('grp-main')}${mode === 'split' ? group('generated-42') : ''}${['right','bottom'].includes(mode) ? group('relocated',true) : ''}</main>`).join('')
-const html = `<html data-hermes-theme="rounded"><head><style>:root{--dt-sidebar-bg:#111;--ui-editor-surface-background:#222;--ui-stroke-secondary:#333}section{display:flex;flex-direction:column;width:300px;height:200px}[data-panel-header]{display:flex;flex-shrink:0}[data-zone-tabstrip]{height:100%;flex:1;box-sizing:border-box}.body{flex:1;min-height:0}.inner{height:100%}${sandbox.css}</style></head><body>${fixtures}<script>
+const headerFixture = `<section data-case="messaging-header" style="width:300px"><div class="group/section"><button class="group/section-label"><span class="chip"><svg class="glyph" viewBox="0 0 24 24"></svg></span><span class="panel-label">Telegram</span></button></div></section>`
+const html = `<html data-hermes-theme="rounded"><head><style>:root{--dt-sidebar-bg:#111;--ui-editor-surface-background:#222;--ui-stroke-secondary:#333}section{display:flex;flex-direction:column;width:300px;height:200px}[data-panel-header]{display:flex;flex-shrink:0}[data-zone-tabstrip]{height:100%;flex:1;box-sizing:border-box}.body{flex:1;min-height:0}.inner{height:100%}${sandbox.css}section[data-case=messaging-header] .chip{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:4px;flex:none}section[data-case=messaging-header] .glyph{width:12px;height:12px}section[data-case=messaging-header] button{display:flex;align-items:center;gap:4px;line-height:1;padding:0;border:0;background:transparent}</style></head><body>${headerFixture}${fixtures}<script>
 const failures=[];
+try{
 for(const group of document.querySelectorAll('[data-tree-group]')){
  const sidebar=!!group.querySelector('[data-slot="sidebar-content"]');
  const body=group.querySelector('[data-zone-body] > div'); const s=getComputedStyle(body);
@@ -42,6 +44,16 @@ for(const group of document.querySelectorAll('[data-tree-group]')){
  if(getComputedStyle(group.querySelector('[data-panel-header]')).height!==(sidebar ? '44px' : '34px')) failures.push('unexpected header height');
  if(getComputedStyle(group).backgroundColor!=='rgb(17, 17, 17)') failures.push('frame color mismatch');
 }
+{
+ const head=document.querySelector('section[data-case=messaging-header]');
+ const chip=head.querySelector('.chip'); const cs=getComputedStyle(chip);
+ if(cs.paddingLeft!=='0px') failures.push('platform logo inherits label inset: '+cs.paddingLeft);
+ if(!cs.flex.startsWith('0 0 auto')&&!cs.flex.startsWith('none')) failures.push('platform logo can shrink out of its box: '+cs.flex);
+ const row=head.querySelector('[class~="group/section-label"]').getBoundingClientRect(), cr=chip.getBoundingClientRect();
+ if(cr.height>row.height+0.5||cr.top<row.top-0.5||cr.bottom>row.bottom+0.5) failures.push('platform logo escapes the header row');
+ if(getComputedStyle(head.querySelector('.panel-label')).fontSize!=='13px') failures.push('section label type lost');
+}
+}catch(e){failures.push('SCRIPT ERROR: '+e.message);}
 document.body.innerHTML='<pre id="result">'+JSON.stringify(failures)+'</pre>';
 </script></body></html>`
 writeFileSync(join(dir,'fixture.html'),html)

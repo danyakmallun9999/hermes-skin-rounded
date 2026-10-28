@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.1
+
+- The chooser's Terminal tile now opens the terminal instead of toggling it: a pane already on screen is focused, never closed, because `view.showTerminal` hides a visible terminal.
+- Drop the `revealPane` fallback, which only reaches plugin-registered panes and silently did nothing for the core terminal.
+- Say plainly when the terminal still does not appear (its pane is dismissed out of the saved per-mode layout) instead of pretending the click worked.
+- Cover both paths in the chooser fixture: open once when hidden, focus without a second `runAction` when already on screen.
+
+## 1.3.0
+
+- Sidebar segmented tabs and workspace tabs get rounded pills without changing tab or bar size; long titles ellipsize.
+- Workspace tab close button becomes a 24px target that reserves its own text space and only fades in on hover, focus, or selection.
+- Taller sidebar header (44px) so the Home/Bots tabs are no longer cramped.
+- Remove the extra inset outline on the right-docked sidebar; the native resize seam is the only boundary.
+- Remove the chat composer shadow in light and dark modes.
+- Titlebar keeps only the core controls; Layout editor, HUD mode, and Swap sidebar sides are hidden.
+- Browser panel is rounded on top and square at the bottom, clipped at the webview layer too.
+- Main workspace keeps rounded top corners and square bottom corners.
+- Right-pane toggle opens a 2x2 grid chooser (Files, Terminal, Browser, Review, Scheduled jobs) instead of a plain toggle.
+- Section header icon chips no longer inherit the label inset, so platform logos such as Telegram stay inside their box.
+
 ## 1.2.1
 
 - Move segmented-control background and 2px padding onto the tab list only.

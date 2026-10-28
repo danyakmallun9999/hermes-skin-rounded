@@ -393,7 +393,7 @@ ${S} [data-tree-group] > [data-panel-header] {
 /* Round the real PaneBody, never its display:contents menu wrapper or
    inner cached panes. All corners are symmetric when docking changes. */
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) > [data-zone-body] > div {
-  border-radius: var(--rounded-panel-radius) !important;
+  border-radius: var(--rounded-panel-radius) var(--rounded-panel-radius) 0 0 !important;
   overflow: hidden !important;
   background: var(--ui-editor-surface-background) !important;
   /* Native resize seam is the sole boundary; do not add a second outline. */
@@ -584,8 +584,12 @@ ${S}[data-rounded-nav-more] [data-rounded-more] > button > i { transform: rotate
 ${S} [data-rounded-more] > button > span::after { content: "More"; }
 ${S}[data-rounded-nav-more] [data-rounded-more] > button > span::after { content: "Less"; }
 
-/* Section labels ("Pinned", "Sessions") → quiet, sentence case, muted. */
-${S} .group\\/section-label > span {
+/* Section labels ("Pinned", "Sessions") → quiet, sentence case, muted.
+   Icon chips inside the label are their own box: skip them, or the platform
+   logo inherits the label inset and hangs out of the header row. */
+${S} .group\\/section-label > span:has(> svg),
+${S} .group\\/section-label > span > svg { flex: none; padding-left: 0 !important; }
+${S} .group\\/section-label > span:not(:has(> svg)) {
   text-transform: none;
   letter-spacing: 0;
   font-size: 0.8125rem;
@@ -937,6 +941,20 @@ function mountPanelChooser(ctx) {
     ['Scheduled jobs', 'calendar', 'nav.cron']
   ]
   const available = id => ctx.listActions?.().some(action => action.id === id)
+  // `view.showTerminal` is a TOGGLE, not an open: flipping it while the pane is
+  // already on screen closes the terminal the user just asked for. And a pane's
+  // position comes from the saved layout — a plugin cannot move a core pane, so
+  // "open" here means "make sure it is on screen", never "flip it".
+  const terminalOnScreen = () => {
+    try {
+      return host.paneVisibility?.('terminal')?.get?.() === true
+    } catch {
+      return false
+    }
+  }
+  const focusTerminal = () => {
+    document.querySelector('[data-terminal]:not(.invisible) .xterm-helper-textarea')?.focus?.()
+  }
   const show = button => {
     anchor = button
     grid.replaceChildren()
@@ -950,25 +968,40 @@ function mountPanelChooser(ctx) {
       const text = document.createElement('span')
       text.textContent = label
       item.append(glyph, text)
-      const terminalFallback = action === 'view.showTerminal' && typeof host.revealPane === 'function'
-      const enabled = available(action) || terminalFallback
+      const enabled = available(action)
       item.disabled = !enabled
       if (!enabled) {
         item.style.opacity = '0.4'
         item.style.cursor = 'not-allowed'
-        item.title = label === 'Terminal' ? 'This Hermes version does not expose the Terminal action to plugins.' : 'Unavailable in this Hermes version'
+        item.title = 'Unavailable in this Hermes version'
       }
       item.addEventListener('pointerenter', () => { if (!item.disabled) item.style.background = 'var(--ui-control-hover-background)' })
       item.addEventListener('pointerleave', () => { item.style.background = 'transparent' })
       item.addEventListener('click', () => {
         close()
-        if (!available(action) && terminalFallback) {
-          host.revealPane('terminal')
+        if (action === 'view.showTerminal' && terminalOnScreen()) {
+          focusTerminal()
           return
         }
-        {
-          const result = ctx.runAction?.(action)
-          if (!result?.ok) host.notify?.({ kind: 'error', message: result?.error || `Cannot open ${label}` })
+        if (!available(action)) return
+        const result = ctx.runAction?.(action)
+        if (!result?.ok) {
+          host.notify?.({ kind: 'error', message: result?.error || `Cannot open ${label}` })
+          return
+        }
+        // The action succeeded but the pane is dismissed out of the saved
+        // layout: adoption falls back to stacking it as a tab in another zone,
+        // which is the inconsistency users read as "the terminal opens in the
+        // wrong place". Say what fixes it instead of moving a core pane.
+        if (action === 'view.showTerminal') {
+          window.setTimeout(() => {
+            if (!terminalOnScreen()) {
+              host.notify?.({
+                kind: 'info',
+                message: 'Terminal did not appear: its pane is missing from this mode\'s saved layout.'
+              })
+            }
+          }, 1200)
         }
       })
       grid.appendChild(item)
