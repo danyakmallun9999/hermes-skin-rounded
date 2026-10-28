@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- Move segmented-control background and 2px padding onto the tab list only.
+- Use a 10px track radius and 8px thumb radius, with stretch-sized tabs instead of fixed 27px height.
+- Keep trailing controls outside the pill; add computed-style padding and overflow regression checks.
+
 ## 1.2.0
 
 - Symmetric 16px workspace corners independent of sidebar docking direction.

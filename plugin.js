@@ -340,20 +340,29 @@ ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) > [data-zone-bod
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) { background: var(--dt-sidebar-bg) !important; }
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) > [data-panel-header] { background: var(--dt-sidebar-bg) !important; }
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] {
-  /* Keep titlebar clearance, docking and tab drag geometry owned by Hermes. */
   min-width: 0; align-self: stretch;
-  display: flex;
-  background: var(--claude-seg-track) !important;
-  border-radius: 0.625rem;
-  padding: 2px;
+  display: flex; align-items: stretch;
+  background: transparent !important;
+  border-radius: 0; padding: 0;
   cursor: default !important;
 }
-${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tablist"] { display: flex; width: 100%; gap: 2px; overflow: hidden; }
+/* Paint only the tab list, not the titlebar's drag and trailing controls. */
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] > [role="tablist"] {
+  display: flex; flex: 1 1 0; min-width: 0;
+  box-sizing: border-box;
+  align-items: stretch; gap: 2px;
+  margin: 2px 6px; padding: 2px;
+  border-radius: 10px;
+  background: var(--claude-seg-track) !important;
+  overflow-x: auto; overflow-y: hidden;
+}
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tab"] {
-  flex: 1 1 0; min-width: 0;
-  height: 27px;
+  display: flex; flex: 1 1 0; min-width: 0; min-height: 0;
+  box-sizing: border-box;
+  height: auto !important; align-self: stretch; align-items: center;
+  padding: 0 8px !important;
   justify-content: center;
-  border-radius: 0.5rem;
+  border-radius: 8px !important;
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
