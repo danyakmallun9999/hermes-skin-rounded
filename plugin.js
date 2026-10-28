@@ -941,10 +941,13 @@ function mountPanelChooser(ctx) {
     ['Scheduled jobs', 'calendar', 'nav.cron']
   ]
   const available = id => ctx.listActions?.().some(action => action.id === id)
-  // `view.showTerminal` is a TOGGLE, not an open: flipping it while the pane is
-  // already on screen closes the terminal the user just asked for. And a pane's
-  // position comes from the saved layout — a plugin cannot move a core pane, so
-  // "open" here means "make sure it is on screen", never "flip it".
+  // The terminal is deliberately NOT on the plugin allowlist — `PLUGIN_APP_ACTIONS`
+  // has no `view.showTerminal`, so `runAction` refuses it — and that id is a
+  // TOGGLE anyway: running it while the pane is on screen would close the very
+  // pane the user asked for. `revealPane` is the sanctioned opener: it clears a
+  // persisted Close, re-adopts a pane missing from the saved tree, un-collapses
+  // its column, un-minimizes the zone and fronts the tab — for any pane id.
+  const canRevealTerminal = () => typeof host.revealPane === 'function'
   const terminalOnScreen = () => {
     try {
       return host.paneVisibility?.('terminal')?.get?.() === true
@@ -952,8 +955,15 @@ function mountPanelChooser(ctx) {
       return false
     }
   }
-  const focusTerminal = () => {
-    document.querySelector('[data-terminal]:not(.invisible) .xterm-helper-textarea')?.focus?.()
+  // A reveal lands over a couple of frames (slot rect chase, theme repaint) and
+  // the composer can take the keyboard on the macrotask between them, so claim
+  // it the way the native reveal does: a few attempts, then stop.
+  const focusTerminal = attempts => {
+    window.requestAnimationFrame(() => {
+      if (!terminalOnScreen()) return
+      document.querySelector('[data-terminal]:not(.invisible) .xterm-helper-textarea')?.focus?.()
+      if (attempts > 1) focusTerminal(attempts - 1)
+    })
   }
   const show = button => {
     anchor = button
@@ -968,7 +978,7 @@ function mountPanelChooser(ctx) {
       const text = document.createElement('span')
       text.textContent = label
       item.append(glyph, text)
-      const enabled = available(action)
+      const enabled = action === 'view.showTerminal' ? canRevealTerminal() : available(action)
       item.disabled = !enabled
       if (!enabled) {
         item.style.opacity = '0.4'
@@ -979,21 +989,20 @@ function mountPanelChooser(ctx) {
       item.addEventListener('pointerleave', () => { item.style.background = 'transparent' })
       item.addEventListener('click', () => {
         close()
-        if (action === 'view.showTerminal' && terminalOnScreen()) {
-          focusTerminal()
-          return
-        }
-        if (!available(action)) return
-        const result = ctx.runAction?.(action)
-        if (!result?.ok) {
-          host.notify?.({ kind: 'error', message: result?.error || `Cannot open ${label}` })
-          return
-        }
-        // The action succeeded but the pane is dismissed out of the saved
-        // layout: adoption falls back to stacking it as a tab in another zone,
-        // which is the inconsistency users read as "the terminal opens in the
-        // wrong place". Say what fixes it instead of moving a core pane.
         if (action === 'view.showTerminal') {
+          if (terminalOnScreen()) {
+            focusTerminal(1)
+            return
+          }
+          if (!canRevealTerminal()) {
+            host.notify?.({ kind: 'error', message: 'This Hermes version cannot open the terminal from a plugin.' })
+            return
+          }
+          host.revealPane('terminal')
+          focusTerminal(3)
+          // Adoption alone is silent (it will not front over the zone's active
+          // tab), so a reveal that still shows nothing means the pane is not in
+          // this mode's saved tree at all. Say so instead of failing quietly.
           window.setTimeout(() => {
             if (!terminalOnScreen()) {
               host.notify?.({
@@ -1002,7 +1011,11 @@ function mountPanelChooser(ctx) {
               })
             }
           }, 1200)
+          return
         }
+        if (!available(action)) return
+        const result = ctx.runAction?.(action)
+        if (!result?.ok) host.notify?.({ kind: 'error', message: result?.error || `Cannot open ${label}` })
       })
       grid.appendChild(item)
     }

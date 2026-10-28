@@ -1,11 +1,11 @@
 # Changelog
 
-## 1.3.1
+## 1.3.2
 
-- The chooser's Terminal tile now opens the terminal instead of toggling it: a pane already on screen is focused, never closed, because `view.showTerminal` hides a visible terminal.
-- Drop the `revealPane` fallback, which only reaches plugin-registered panes and silently did nothing for the core terminal.
-- Say plainly when the terminal still does not appear (its pane is dismissed out of the saved per-mode layout) instead of pretending the click worked.
-- Cover both paths in the chooser fixture: open once when hidden, focus without a second `runAction` when already on screen.
+- The chooser's Terminal tile opens through `host.revealPane('terminal')` again. `view.showTerminal` is not on `PLUGIN_APP_ACTIONS`, so gating the tile on `listActions()` disabled it — and it is a toggle anyway, which closed a terminal that was already on screen.
+- A visible terminal is focused (three frame attempts, like the native reveal) instead of being flipped off.
+- `revealPane` clears the persisted Close, re-adopts a pane missing from the saved tree, un-collapses its column and fronts the tab, so the terminal lands in the main zone beside the chat regardless of the mode it is opened from.
+- Fixture now mirrors the real allowlist (no `view.showTerminal` in `listActions()`) and asserts the tile stays enabled and calls `reveal:terminal`.
 
 ## 1.3.0
 
