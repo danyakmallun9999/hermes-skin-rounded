@@ -1,0 +1,28 @@
+{
+  "name": "hermes-skin-rounded",
+  "version": "1.1.0",
+  "description": "Modern rounded skin and themes for Hermes Desktop",
+  "main": "plugin.js",
+  "type": "module",
+  "scripts": {
+    "check": "node -c plugin.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danyakmallun9999/hermes-skin-rounded.git"
+  },
+  "keywords": [
+    "hermes-agent",
+    "hermes-desktop",
+    "theme",
+    "skin",
+    "claude",
+    "rounded"
+  ],
+  "author": "Danya Kmallun <danyakmallun9999@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danyakmallun9999/hermes-skin-rounded/issues"
+  },
+  "homepage": "https://github.com/danyakmallun9999/hermes-skin-rounded#readme"
+}

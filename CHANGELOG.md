@@ -1,0 +1,19 @@
+# Changelog
+
+## 1.1.0 — 2026-10-28
+
+- Added unified solid app-bar matching sidebar background (`--dt-sidebar-bg`).
+- Added rounded top-left junction (`border-top-left-radius: 16px`) where main workspace meets sidebar and app-bar.
+- Removed unwanted transparency leakage behind tab headers; solid and clean on Omarchy / Linux / Hyprland.
+- Offset top hairline sash divider so it flows seamlessly across the top titlebar.
+
+## 1.0.0 — 2026-09-24
+
+First public release.
+
+- Twelve themes on the Claude layout: Claude, MacOS, Nord, Gruvbox, Monokai Pro,
+  One Monokai, Dracula, One Dark Pro, One Candy Dark, Cobalt2, GitHub, Ayu.
+- Claude-style shell: simple left nav with a **More** fold, centered reading
+  column, right-aligned user bubbles, two-row rounded composer, serif greeting.
+- One-time setup per Hermes profile (theme, system light/dark, file rail closed).
+- Greeting name is optional and empty by default.
