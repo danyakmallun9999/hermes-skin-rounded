@@ -399,6 +399,22 @@ ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) > [data-zone-bod
   /* Native resize seam is the sole boundary; do not add a second outline. */
   box-shadow: none !important;
 }
+/* Browser keeps rounded top corners and square bottom corners at every layer. */
+${S} [data-tree-group] > [data-zone-body] > div:has([data-preview-browser]) {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+${S} [data-preview-browser] {
+  border-radius: var(--rounded-panel-radius) var(--rounded-panel-radius) 0 0 !important;
+  overflow: hidden !important;
+  isolation: isolate;
+}
+${S} [data-preview-browser] webview {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  overflow: hidden !important;
+}
+
 /* Headers and resize sashes retain Hermes' native bounds and hit targets. */
 
 /* Sidebar pane header: drag band on top, then the Sessions/Bots/Terminal tabs
@@ -917,7 +933,8 @@ function mountPanelChooser(ctx) {
     ['Files', 'files', 'view.showFiles'],
     ['Terminal', 'terminal', 'view.showTerminal'],
     ['Browser', 'globe', 'view.showBrowser'],
-    ['Review', 'diff', 'view.toggleReview']
+    ['Review', 'diff', 'view.toggleReview'],
+    ['Scheduled jobs', 'calendar', 'nav.cron']
   ]
   const available = id => ctx.listActions?.().some(action => action.id === id)
   const show = button => {
