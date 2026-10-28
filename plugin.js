@@ -559,10 +559,10 @@ ${S} form[data-slot="composer-root"] { border-radius: 1.25rem; }
 ${S} [data-slot="composer-surface"] {
   border-radius: 1.25rem !important;
   border-color: var(--dt-composer-ring) !important;
-  box-shadow: 0 2px 10px color-mix(in srgb, #000 6%, transparent), 0 0 0 0 transparent;
+  box-shadow: none !important;
   --composer-fill: var(--dt-card);
 }
-${S}.dark [data-slot="composer-surface"] { box-shadow: 0 2px 12px color-mix(in srgb, #000 30%, transparent); }
+${S}.dark [data-slot="composer-surface"] { box-shadow: none !important; }
 /* Two rows: the text on top, controls underneath (+ left, model/send right). */
 ${S} [data-slot="composer-fade"] > .grid {
   grid-template-columns: auto minmax(0, 1fr) auto !important;
