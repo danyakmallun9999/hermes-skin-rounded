@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- Symmetric 16px workspace corners independent of sidebar docking direction.
+- Identify sidebar groups by their content, not persistent layout IDs.
+- Remove fixed 87px sidebar header, 50px tab offset, and 34px sash override.
+- Preserve native docking, header clearance, and resize hit targets.
+- Add real Chromium computed-style regression fixtures.
+
 ## 1.1.0 — 2026-10-28
 
 - Added unified solid app-bar matching sidebar background (`--dt-sidebar-bg`).

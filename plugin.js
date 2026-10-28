@@ -304,54 +304,52 @@ ${S} [data-titlebar-cluster] button { opacity: 0.55; }
 ${S} [data-titlebar-cluster] button:hover { opacity: 1; }
 
 /* Main pane tab strip → a plain conversation title, Claude style. */
-${S} [data-zone-tabstrip="grp-main"] { background: transparent !important; }
-${S} [data-zone-tabstrip="grp-main"] [role="tab"] {
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] { background: transparent !important; }
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"] {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
 }
-${S} [data-zone-tabstrip="grp-main"] [role="tab"] .uppercase {
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"] .uppercase {
   text-transform: none;
   letter-spacing: 0;
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--ui-text-secondary);
 }
-${S} [data-zone-tabstrip="grp-main"] [role="tab"][aria-selected="true"] .uppercase { color: var(--ui-text-primary); }
-/* App-bar: unify background color with sidebar across all panel headers */
-${S} [data-tree-group] > [data-panel-header] { background: var(--dt-sidebar-bg) !important; }
-${S} [data-tree-group="grp-main"] { background: var(--dt-sidebar-bg) !important; }
-
-/* Main workspace panel: rounded top-left junction where sidebar meets app-bar */
-${S} [data-tree-group="grp-main"] > [data-panel-header] ~ div:not([role="separator"]),
-${S} [data-tree-group="grp-main"] [data-zone-body] > div {
-  border-top-left-radius: 16px !important;
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][aria-selected="true"] .uppercase { color: var(--ui-text-primary); }
+/* Position-independent frame: every dock group uses the same chrome. */
+${S} { --rounded-panel-radius: 16px; }
+${S} [data-tree-group],
+${S} [data-tree-group] > [data-panel-header] {
+  background: var(--dt-sidebar-bg) !important;
+}
+/* Round the real PaneBody, never its display:contents menu wrapper or
+   inner cached panes. All corners are symmetric when docking changes. */
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) > [data-zone-body] > div {
+  border-radius: var(--rounded-panel-radius) !important;
   overflow: hidden !important;
   background: var(--ui-editor-surface-background) !important;
-  border-top: 1px solid var(--ui-stroke-secondary) !important;
-  border-left: 1px solid var(--ui-stroke-secondary) !important;
+  box-shadow: inset 0 0 0 1px var(--ui-stroke-secondary);
 }
-
-/* Let the top app-bar flow seamlessly without the vertical sash line cutting through */
-${S} [data-tree-split] > div > [role="separator"][data-sash-overlap="trailing"] {
-  top: 34px !important;
-}
+/* Headers and resize sashes retain Hermes' native bounds and hit targets. */
 
 /* Sidebar pane header: drag band on top, then the Sessions/Bots/Terminal tabs
    as Claude's "Home | Code" segmented control — a pill track one step
    lighter than the sidebar, a flat lighter thumb, no hairline or shadow. */
-${S} [data-tree-group="grp-sessions"] { background: var(--dt-sidebar-bg) !important; }
-${S} [data-tree-group="grp-sessions"] > [data-panel-header] { height: 87px !important; background: var(--dt-sidebar-bg) !important; }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] {
-  position: absolute; left: 0.625rem; right: 0.625rem; top: 50px; height: 31px;
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) { background: var(--dt-sidebar-bg) !important; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) > [data-panel-header] { background: var(--dt-sidebar-bg) !important; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] {
+  /* Keep titlebar clearance, docking and tab drag geometry owned by Hermes. */
+  min-width: 0; align-self: stretch;
   display: flex;
   background: var(--claude-seg-track) !important;
   border-radius: 0.625rem;
   padding: 2px;
   cursor: default !important;
 }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] [role="tablist"] { display: flex; width: 100%; gap: 2px; overflow: hidden; }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] [role="tab"] {
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tablist"] { display: flex; width: 100%; gap: 2px; overflow: hidden; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tab"] {
   flex: 1 1 0; min-width: 0;
   height: 27px;
   justify-content: center;
@@ -363,46 +361,46 @@ ${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] [role="tab"] {
   cursor: pointer !important;
   transition: background-color 120ms, color 120ms;
 }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] [role="tab"]:hover { color: var(--dt-foreground); }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] [role="tab"][aria-selected="true"] {
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tab"]:hover { color: var(--dt-foreground); }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tab"][aria-selected="true"] {
   background: var(--claude-seg-thumb) !important;
   color: var(--dt-foreground);
 }
 /* Kill the strip's own chrome: active underline, status dot, key hints. */
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] [role="tab"]::before,
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] [role="tab"]::after { display: none !important; }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] .tab-key-hint-icon { display: none !important; }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] .pane-tab-content { justify-content: center; }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] .pane-tab-content > span:last-child { justify-content: center; padding: 0 0.25rem; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tab"]::before,
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [role="tab"]::after { display: none !important; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] .tab-key-hint-icon { display: none !important; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] .pane-tab-content { justify-content: center; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] .pane-tab-content > span:last-child { justify-content: center; padding: 0 0.25rem; }
 /* Icon and label are rebuilt as pseudo-elements so the gap between them is ours. */
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] .uppercase {
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] .uppercase {
   display: inline-flex; align-items: center; gap: 0.5rem;
   text-transform: none; letter-spacing: 0; font-size: 0 !important;
   overflow: hidden;
 }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] .uppercase::before { font-family: codicon; font-size: 0.875rem; line-height: 1; }
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] .uppercase::after {
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] .uppercase::before { font-family: codicon; font-size: 0.875rem; line-height: 1; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] .uppercase::after {
   font-family: var(--dt-font-sans); font-size: 0.875rem; line-height: 1; font-weight: 500;
   white-space: nowrap;
 }
-${S} [data-zone-tabstrip="grp-sessions"] [data-tree-tab="sessions"] .uppercase::before { content: "\\eb06"; }
-${S} [data-zone-tabstrip="grp-sessions"] [data-tree-tab="sessions"] .uppercase::after { content: "Home"; }
-${S} [data-zone-tabstrip="grp-sessions"] [data-tree-tab="hermes-bots:pane"] .uppercase::before { content: "\\ec20"; }
-${S} [data-zone-tabstrip="grp-sessions"] [data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots"; }
-${S} [data-zone-tabstrip="grp-sessions"] [data-tree-tab="terminal"] .uppercase::before { content: "\\ea85"; }
-${S} [data-zone-tabstrip="grp-sessions"] [data-tree-tab="terminal"] .uppercase::after { content: "Terminal"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="sessions"] .uppercase::before { content: "\\eb06"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="sessions"] .uppercase::after { content: "Home"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="hermes-bots:pane"] .uppercase::before { content: "\\ec20"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::before { content: "\\ea85"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::after { content: "Terminal"; }
 /* Three tabs: a tighter icon gap, and in a narrow sidebar smaller type too,
    so "Terminal" fits whole (the strip is a size container for the query). */
-${S} [data-tree-group="grp-sessions"] [data-zone-tabstrip] { container-type: inline-size; }
-${S} [data-zone-tabstrip="grp-sessions"]:has([role="tab"]:nth-child(3)) .uppercase { gap: 0.375rem; }
-${S} [data-zone-tabstrip="grp-sessions"]:has([role="tab"]:nth-child(3)) .pane-tab-content > span:last-child { padding: 0; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] { container-type: inline-size; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip]:has([role="tab"]:nth-child(3)) .uppercase { gap: 0.375rem; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip]:has([role="tab"]:nth-child(3)) .pane-tab-content > span:last-child { padding: 0; }
 @container (max-width: 250px) {
-  ${S} [data-zone-tabstrip="grp-sessions"]:has([role="tab"]:nth-child(3)) .uppercase { gap: 0.25rem; }
-  ${S} [data-zone-tabstrip="grp-sessions"]:has([role="tab"]:nth-child(3)) .uppercase::before,
-  ${S} [data-zone-tabstrip="grp-sessions"]:has([role="tab"]:nth-child(3)) .uppercase::after { font-size: 0.75rem; }
+  ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip]:has([role="tab"]:nth-child(3)) .uppercase { gap: 0.25rem; }
+  ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip]:has([role="tab"]:nth-child(3)) .uppercase::before,
+  ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip]:has([role="tab"]:nth-child(3)) .uppercase::after { font-size: 0.75rem; }
 }
-${S} [data-zone-tabstrip="grp-sessions"] [aria-label="Minimize"] { display: none; }
-${S} [data-zone-tabstrip="grp-sessions"] [aria-label="Close"] { display: none; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [aria-label="Minimize"] { display: none; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [aria-label="Close"] { display: none; }
 ${S} {
   --claude-seg-track: color-mix(in srgb, #000 5%, var(--dt-sidebar-bg));
   --claude-seg-thumb: var(--dt-card);

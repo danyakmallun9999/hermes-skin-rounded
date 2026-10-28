@@ -9,7 +9,7 @@ Features a unified app-bar matching the sidebar background, smooth rounded inwar
 ## Highlights
 
 - **Seamless Unified App-bar**: The top app-bar and panel headers match the sidebar background, eliminating awkward color transitions across the top of the window.
-- **Modern Rounded Junction**: The main workspace panel features an inward curved top-left corner (`border-top-left-radius: 16px`), giving the app an elegant modern desktop feel (similar to Arc, Zed, and macOS apps) instead of sharp 90-degree rectangular seams.
+- **Dock-independent Rounded Panels**: All four workspace corners use a shared 16px radius. Sidebar styling follows its content rather than fixed group IDs; native header and resize geometry stay intact when panes move.
 - **Non-Transparent & Solid**: Optimized for Linux desktop environments (such as Omarchy, Hyprland, Sway) as well as macOS and Windows. CSS surfaces are opaque; compositor-level window opacity must be configured separately.
 - **12 Curated Themes**:
   - `Rounded` (default warm light + charcoal dark)
@@ -76,3 +76,7 @@ Licensed under the [MIT License](LICENSE).
 ## Compatibility notes
 
 This is a **Hermes Desktop plugin**, not a CLI/TUI skin. Theme names use the `rounded` namespace and do not replace the original Claude Skin themes. The plugin selects its default theme and system color mode once per profile. Avoid enabling multiple layout-changing plugins at once: their injected navigation controls can overlap. Linux compositor opacity is outside this plugin’s control.
+
+## Tests
+
+Run `npm run check && npm test`. The layout regression test requires Chromium on PATH and checks computed styles in synthetic pane-shell fixtures (left/right/bottom/hidden sidebar and split panes); it is not a full Desktop drag-and-drop test.
