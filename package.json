@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "check": "node -c plugin.js",
-    "test": "node test.mjs && node test-layout.mjs"
+    "test": "node test.mjs && node test-layout.mjs && node test-chooser.mjs"
   },
   "repository": {
     "type": "git",

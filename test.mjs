@@ -8,7 +8,7 @@ const node = () => ({ style: {}, appendChild() {}, remove() {}, addEventListener
   removeEventListener() {}, querySelector: () => null, setAttribute() {},
   hasAttribute: () => false, toggleAttribute() {}, removeAttribute() {}, contains: () => false })
 const document = { createElement: () => { const el = node(); elements.push(el); return el },
-  head: node(), documentElement: { ...node(), style: { setProperty() {}, removeProperty() {} } },
+  head: node(), body: node(), documentElement: { ...node(), style: { setProperty() {}, removeProperty() {} } },
   querySelector: () => null, querySelectorAll: () => [], getElementById: () => null,
   addEventListener() {}, removeEventListener() {} }
 const atom = value => ({ get: () => value, subscribe: () => () => {} })
@@ -16,7 +16,7 @@ const sdk = { THEMES_AREA: 'themes', PALETTE_AREA: 'palette', TITLEBAR_AREAS: { 
   host: { state: { profile: atom('default'), model: atom('') }, profiles: { list: async () => ({ profiles: [] }) } } }
 let source = readFileSync(new URL('./plugin.js', import.meta.url), 'utf8')
 source = source.replace(/^import .*$/gm, '').replace('export default {', 'globalThis.plugin = {')
-const sandbox = { sdk, document, Date, setTimeout, jsx() {}, useEffect() {} }
+const sandbox = { sdk, document, window: { addEventListener() {}, removeEventListener() {} }, Date, setTimeout, jsx() {}, useEffect() {} }
 vm.createContext(sandbox)
 vm.runInContext(source, sandbox)
 assert.equal(sandbox.plugin.id, 'hermes-skin-rounded')

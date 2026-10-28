@@ -303,6 +303,13 @@ ${S} [data-chat-surface] > div[aria-hidden="true"]:has(> img) { display: none !i
 ${S} [data-titlebar-cluster] button { opacity: 0.55; }
 ${S} [data-titlebar-cluster] button:hover { opacity: 1; }
 
+/* Keep the titlebar compact; actions remain available via native commands. */
+${S} [data-titlebar-cluster] button:has(.codicon-layout),
+${S} [data-titlebar-cluster] button:has(.codicon-comment-discussion),
+${S} [data-titlebar-cluster] button:has(.codicon-arrow-swap) {
+  display: none !important;
+}
+
 /* Main pane tab strip → a plain conversation title, Claude style. */
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] { background: transparent !important; }
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"] {
@@ -318,6 +325,65 @@ ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabst
   color: var(--ui-text-secondary);
 }
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][aria-selected="true"] .uppercase { color: var(--ui-text-primary); }
+/* Rounded workspace tabs: paint inside existing bounds; no height/width changes. */
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"] {
+  position: relative;
+  border-radius: 8px !important;
+  isolation: isolate;
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"]::before {
+  content: ""; position: absolute; inset: 3px 2px;
+  border-radius: 6px; pointer-events: none; z-index: -1;
+  background: transparent;
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][aria-selected="true"]::before {
+  background: var(--dt-card);
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"]:hover::before {
+  background: var(--ui-control-hover-background);
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"]::after { display: none !important; }
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] .pane-tab-content,
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] .pane-tab-content > span {
+  min-width: 0; max-width: 100%; overflow: hidden;
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"] .uppercase {
+  display: block; min-width: 0; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis !important;
+}
+
+/* Stable close affordance: reserve text space before hover, keep tab bounds. */
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable] .pane-tab-content {
+  box-sizing: border-box; padding-right: 28px;
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable] > span:has(> button) {
+  position: absolute; inset: 0 4px 0 auto;
+  display: flex; align-items: center; width: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 120ms ease;
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable]:hover > span:has(> button),
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable]:focus-within > span:has(> button),
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable][aria-selected="true"] > span:has(> button) {
+  opacity: 1; pointer-events: auto;
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable] > span > button {
+  display: grid; place-items: center;
+  box-sizing: border-box; width: 24px !important; height: 24px;
+  padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--ui-text-tertiary);
+  cursor: pointer; transition: background-color 120ms, color 120ms;
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable] > span > button:hover {
+  background: var(--ui-control-hover-background); color: var(--ui-text-primary);
+}
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable] > span > button:focus-visible {
+  outline: 2px solid var(--ui-accent); outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable] > span:has(> button), ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [role="tab"][data-closeable] > span > button { transition: none; }
+}
+
 /* Position-independent frame: every dock group uses the same chrome. */
 ${S} { --rounded-panel-radius: 16px; }
 ${S} [data-tree-group],
@@ -330,7 +396,8 @@ ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) > [data-zone-bod
   border-radius: var(--rounded-panel-radius) !important;
   overflow: hidden !important;
   background: var(--ui-editor-surface-background) !important;
-  box-shadow: inset 0 0 0 1px var(--ui-stroke-secondary);
+  /* Native resize seam is the sole boundary; do not add a second outline. */
+  box-shadow: none !important;
 }
 /* Headers and resize sashes retain Hermes' native bounds and hit targets. */
 
@@ -338,9 +405,17 @@ ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) > [data-zone-bod
    as Claude's "Home | Code" segmented control — a pill track one step
    lighter than the sidebar, a flat lighter thumb, no hairline or shadow. */
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) { background: var(--dt-sidebar-bg) !important; }
-${S} [data-tree-group]:has([data-slot="sidebar-content"]) > [data-panel-header] { background: var(--dt-sidebar-bg) !important; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) > [data-panel-header] {
+  background: var(--dt-sidebar-bg) !important;
+  min-height: 44px;
+}
+/* When Hermes puts tabs below native titlebar controls, reserve both rows. */
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) > [data-panel-header]:has([data-zone-tabstrip].absolute) {
+  min-height: 78px;
+}
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] {
   min-width: 0; align-self: stretch;
+  min-height: 44px;
   display: flex; align-items: stretch;
   background: transparent !important;
   border-radius: 0; padding: 0;
@@ -821,6 +896,98 @@ function FirstRun({ storage }) {
   return null
 }
 
+// Compact panel chooser anchored to the native right-sidebar toggle.
+function mountPanelChooser(ctx) {
+  const panel = document.createElement('div')
+  panel.id = 'rounded-panel-chooser'
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-label', 'Open panel')
+  panel.hidden = true
+  panel.style.cssText = 'position:fixed;z-index:10000;width:260px;padding:10px;box-sizing:border-box;border:1px solid var(--ui-stroke-secondary);border-radius:14px;background:var(--dt-card);color:var(--ui-text-primary);'
+  const grid = document.createElement('div')
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;'
+  panel.appendChild(grid)
+  document.body.appendChild(panel)
+  let anchor = null
+  const close = () => {
+    panel.hidden = true
+    anchor?.setAttribute('aria-expanded', 'false')
+  }
+  const actions = [
+    ['Files', 'files', 'view.showFiles'],
+    ['Terminal', 'terminal', 'view.showTerminal'],
+    ['Browser', 'globe', 'view.showBrowser'],
+    ['Review', 'diff', 'view.toggleReview']
+  ]
+  const available = id => ctx.listActions?.().some(action => action.id === id)
+  const show = button => {
+    anchor = button
+    grid.replaceChildren()
+    for (const [label, icon, action] of actions) {
+      const item = document.createElement('button')
+      item.type = 'button'
+      item.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:72px;padding:10px;border:1px solid var(--ui-stroke-secondary);border-radius:10px;background:transparent;color:inherit;cursor:pointer;font:inherit;'
+      const glyph = document.createElement('i')
+      glyph.className = `codicon codicon-${icon}`
+      glyph.setAttribute('aria-hidden', 'true')
+      const text = document.createElement('span')
+      text.textContent = label
+      item.append(glyph, text)
+      const terminalFallback = action === 'view.showTerminal' && typeof host.revealPane === 'function'
+      const enabled = available(action) || terminalFallback
+      item.disabled = !enabled
+      if (!enabled) {
+        item.style.opacity = '0.4'
+        item.style.cursor = 'not-allowed'
+        item.title = label === 'Terminal' ? 'This Hermes version does not expose the Terminal action to plugins.' : 'Unavailable in this Hermes version'
+      }
+      item.addEventListener('pointerenter', () => { if (!item.disabled) item.style.background = 'var(--ui-control-hover-background)' })
+      item.addEventListener('pointerleave', () => { item.style.background = 'transparent' })
+      item.addEventListener('click', () => {
+        close()
+        if (!available(action) && terminalFallback) {
+          host.revealPane('terminal')
+          return
+        }
+        {
+          const result = ctx.runAction?.(action)
+          if (!result?.ok) host.notify?.({ kind: 'error', message: result?.error || `Cannot open ${label}` })
+        }
+      })
+      grid.appendChild(item)
+    }
+    panel.hidden = false
+    button.setAttribute('aria-expanded', 'true')
+    const rect = button.getBoundingClientRect()
+    const width = panel.getBoundingClientRect().width
+    panel.style.left = `${Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8))}px`
+    panel.style.top = `${Math.max(8, Math.min(rect.bottom + 8, window.innerHeight - panel.getBoundingClientRect().height - 8))}px`
+    grid.querySelector('button:not(:disabled)')?.focus()
+  }
+  const trigger = e => {
+    const button = e.target.closest?.('[data-tour="right-pane-toggle"]')
+    if (!button || !document.documentElement.getAttribute('data-hermes-theme')?.startsWith(THEME_NAME)) return
+    e.preventDefault()
+    e.stopImmediatePropagation()
+    if (!panel.hidden) close()
+    else show(button)
+  }
+  const outside = e => { if (!panel.contains(e.target) && !e.target.closest?.('[data-tour="right-pane-toggle"]')) close() }
+  const key = e => { if (e.key === 'Escape' && !panel.hidden) { close(); anchor?.focus() } }
+  document.addEventListener('click', trigger, true)
+  document.addEventListener('pointerdown', outside, true)
+  document.addEventListener('keydown', key)
+  window.addEventListener('resize', close)
+  ctx.onDispose(() => {
+    close()
+    document.removeEventListener('click', trigger, true)
+    document.removeEventListener('pointerdown', outside, true)
+    document.removeEventListener('keydown', key)
+    window.removeEventListener('resize', close)
+    panel.remove()
+  })
+}
+
 // ── Plugin ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -835,6 +1002,7 @@ export default {
     document.head.appendChild(style)
     ctx.onDispose(() => style.remove())
 
+    mountPanelChooser(ctx)
     paintGreeting()
     ctx.setInterval(paintGreeting, 5 * 60 * 1000)
 
