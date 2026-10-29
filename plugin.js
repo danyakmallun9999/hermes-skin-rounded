@@ -680,6 +680,16 @@ ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before {
   pointer-events: none;
   user-select: none;
 }
+/* A background tile is dimmed and its owner is not the focused chat, so it must
+   not wear that chat's persona: strip the label and the avatar, and hand the
+   reserved line back. Focus follows the click, and the re-stamp follows focus. */
+${S} [data-session-anchor^="session-tile:"][data-chat-unfocused] [data-slot="aui_assistant-message-root"][data-rounded-agent-head] {
+  padding-top: 0;
+}
+${S} [data-session-anchor^="session-tile:"][data-chat-unfocused] [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before,
+${S} [data-session-anchor^="session-tile:"][data-chat-unfocused] [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::after {
+  content: none;
+}
 ${S} [data-slot="aui_assistant-message-root"] > [data-slot="aui_assistant-message-content"] {
   min-width: 0;
   padding: 0.625rem 1rem;
@@ -965,7 +975,19 @@ function mountProfileRow(ctx) {
 const AGENT_TURN_SEL = '[data-slot="aui_assistant-message-root"]'
 
 function mountChatPersona(ctx) {
-  let me = { name: profileKey(host.state.profile.get()) }
+  // Identity follows the chat the reader is LOOKING AT. `state.profile` is the
+  // profile the gateway socket is homed on, which is not the same thing: tab and
+  // tile focus moves without swapping the socket, so reading it labelled every
+  // session with whichever bot last owned the route ("pembuat-ppt" everywhere).
+  // `focusedSessionProfile` is the owner of the focused chat and falls back to
+  // the gateway profile for drafts and uncached ids, exactly as documented.
+  const ownerKey = () =>
+    profileKey(
+      host.state.focusedSessionProfile?.get?.() ||
+        host.state.focusedSessionOwner?.get?.()?.profile ||
+        host.state.profile.get()
+    )
+  let me = { name: ownerKey() }
   let timer = 0
 
   const identity = () => {
@@ -1003,7 +1025,7 @@ function mountChatPersona(ctx) {
   }
 
   const load = () => host.profiles.list().then(r => {
-    const key = profileKey(host.state.profile.get())
+    const key = ownerKey()
     me = (r.profiles ?? []).find(p => profileKey(p.name) === key) ?? { name: key }
     hydrate(false)
   }).catch(() => {})
@@ -1012,10 +1034,13 @@ function mountChatPersona(ctx) {
   // there and let the debounce keep streaming tokens cheap.
   const observer = new MutationObserver(later)
   observer.observe(document.body, { childList: true, subtree: true })
+  const reidentify = () => { me = { name: ownerKey() }; load() }
   const unsubs = [
-    host.state.profile.subscribe(() => { me = { name: profileKey(host.state.profile.get()) }; load() }),
+    host.state.focusedSessionProfile?.subscribe?.(reidentify),
+    host.state.focusedSessionOwner?.subscribe?.(reidentify),
+    host.state.profile.subscribe(reidentify),
     host.state.model.subscribe(() => hydrate(false))
-  ]
+  ].filter(Boolean)
 
   hydrate(false)
   load()

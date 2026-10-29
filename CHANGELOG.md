@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.2
+
+- Fix: the speaker label was pinned to `host.state.profile`, the profile the gateway socket is homed on. Tab and tile focus move without swapping that socket, so every session wore whichever bot last owned the route — opening a `default` session while routed to `pembuat-ppt` still read `pembuat-ppt · OpenCode`.
+- The persona now reads `host.state.focusedSessionProfile` (owner of the focused chat, falling back to the gateway profile for drafts and uncached ids), with `focusedSessionOwner.profile` as the next rung, and subscribes to both, so a bot switch or a session switch re-stamps the replies already on screen.
+- A dimmed `session-tile:` surface draws no avatar and no speaker line: its owner is not the focused chat, so it must not borrow that chat's identity. Focus follows the click and the re-stamp follows focus.
+- `test-chat.mjs` runs with the socket routed to a different bot than the focused chat: moving the route must not relabel, switching the focused bot must, and a background tile must carry no persona while a focused one does. Reverting either fix fails the fixture.
+
 ## 1.4.1
 
 - Width fix: the avatar no longer reserves a 40px gutter inside the reply, which had made every answer narrower than the human turn. It hangs in the transcript's own 24px side padding (`left: -1.3125rem`, 18px circle) and is drawn only on the reply that introduces the speaker, so a reply box spans exactly the width of the turn — the same width the composer is measured against, instead of 40px short.
