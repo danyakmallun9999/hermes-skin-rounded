@@ -24,7 +24,8 @@ Features a unified app-bar matching the sidebar background, smooth rounded inwar
   - `Rounded - Cobalt2`
   - `Rounded - GitHub`
   - `Rounded - Ayu`
-- **Chat With a Counterpart**: The agent side is no longer anonymous prose. Every reply carries the active profile's avatar (colour + initial) and a speaker label with the model once per run, and answers inside its own chat box — the left-hand mirror of your glass bubble on the right.
+- **Chat With a Counterpart**: The agent side is no longer anonymous prose. Every reply carries the active profile's avatar (colour + initial) and a speaker label with the model once per run, and answers inside its own chat box — the left-hand mirror of your glass bubble on the right. The avatar hangs in the transcript's own side padding, so a reply spans the full width of the turn; it never eats a column out of the bubble.
+- **Quiet Reasoning**: Streamed thinking is a glance, not a transcript — the auto-expanding preview is capped at two lines behind a fade, while a block you open yourself keeps its full text.
 - **Minimalist Ergonomics**: Centered chat column, clean segmented control tabs for Sessions/Bots, collapsible navigation, and uncluttered titlebar.
 - **Safe & Non-Destructive**: Does not modify Hermes source code. Switching to a built-in theme turns off the layout CSS; disabling the plugin removes its injected controls. First-run theme and mode preferences are not automatically restored.
 

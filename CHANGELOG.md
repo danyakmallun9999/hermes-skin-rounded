@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1
+
+- Width fix: the avatar no longer reserves a 40px gutter inside the reply, which had made every answer narrower than the human turn. It hangs in the transcript's own 24px side padding (`left: -1.3125rem`, 18px circle) and is drawn only on the reply that introduces the speaker, so a reply box spans exactly the width of the turn — the same width the composer is measured against, instead of 40px short.
+- Reasoning is minimised: the auto-expanding streamed preview is capped at two lines (`max-height: 2.625rem`) behind a bottom fade, in the quieter 12px caption size. A block the reader opens themselves carries no `.max-h-40` preview cap and is left untouched, so expanding still shows the whole thought.
+- `test-chat.mjs` gains width parity (reply box vs turn), the hang offset and the two reasoning states (auto preview clipped and faded, opened block neither), and fails if either regresses.
+
 ## 1.4.0
 
 - The transcript now reads as a conversation with someone: every assistant turn gets a circular avatar in a left gutter — the active profile's colour and initial, the same identity the sidebar account row shows — and the profile name plus model as a speaker label once per run of replies.

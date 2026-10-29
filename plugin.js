@@ -635,19 +635,36 @@ ${S} .composer-human-message {
 
 /* Assistant turn: a counterpart with a profile, answering in its own bubble.
    The human turn is already a glass card on the right; the reply mirrors it on
-   the left, avatar gutter first, so the transcript reads as a conversation
-   instead of prose under a prompt. */
+   the left, so the transcript reads as a conversation instead of prose under a
+   prompt. The avatar hangs in the transcript's own 24px side padding instead of
+   reserving a gutter inside the column: a reply spans the full width of the
+   human turn, and only the first reply of a run introduces the speaker. */
 ${S} [data-slot="aui_assistant-message-root"] {
-  --rounded-agent-avatar: 1.875rem;
-  --rounded-agent-gutter: 0.625rem;
+  --rounded-agent-avatar: 1.125rem;
+  --rounded-agent-hang: 1.3125rem;
   position: relative;
-  padding-left: calc(var(--rounded-agent-avatar) + var(--rounded-agent-gutter));
+  padding-left: 0;
 }
-${S} [data-slot="aui_assistant-message-root"]::before {
+${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head] { padding-top: 1.375rem; }
+${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::after {
+  content: attr(data-rounded-agent-label);
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  color: var(--dt-muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before {
   content: attr(data-rounded-agent-initial);
   position: absolute;
-  top: 0.125rem;
-  left: 0;
+  top: 1.4375rem;
+  left: calc(-1 * var(--rounded-agent-hang));
   display: grid;
   place-items: center;
   width: var(--rounded-agent-avatar);
@@ -656,29 +673,12 @@ ${S} [data-slot="aui_assistant-message-root"]::before {
   background: var(--rounded-agent-color, var(--dt-primary));
   color: var(--dt-primary-foreground);
   font-family: var(--dt-font-sans);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.5625rem;
+  font-weight: 700;
   line-height: 1;
   text-transform: uppercase;
   pointer-events: none;
   user-select: none;
-}
-/* Speaker label once per run of replies, then the avatar sits level with them. */
-${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head] { padding-top: 1.3125rem; }
-${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before { top: 1.4375rem; }
-${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::after {
-  content: attr(data-rounded-agent-label);
-  position: absolute;
-  top: 0.125rem;
-  left: calc(var(--rounded-agent-avatar) + var(--rounded-agent-gutter));
-  max-width: calc(100% - var(--rounded-agent-avatar) - var(--rounded-agent-gutter));
-  overflow: hidden;
-  color: var(--dt-muted-foreground);
-  font-size: 0.75rem;
-  line-height: 1rem;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  pointer-events: none;
 }
 ${S} [data-slot="aui_assistant-message-root"] > [data-slot="aui_assistant-message-content"] {
   min-width: 0;
@@ -702,7 +702,22 @@ ${S} .aui-md.prose h1, ${S} .aui-md.prose h2, ${S} .aui-md.prose h3 {
 ${S} .aui-md.prose pre, ${S} .aui-md.prose [data-slot="code-card"] { border-radius: 0.75rem; }
 ${S} .aui-md.prose code { border-radius: 0.375rem; font-size: 0.85em; }
 ${S} .aui-md.prose table { border-radius: 0.5rem; }
-${S} [data-slot="aui_thinking-disclosure"] { margin-bottom: 0.25rem; }
+/* Reasoning: the auto-expanding preview is a glance, not a transcript. Two
+   lines and a fade while the turn runs; a block the reader opens themselves
+   (no .max-h-40 preview cap) keeps its full scroll. The native
+   "Collapse thinking by default" preference still wins outright. */
+${S} [data-slot="aui_thinking-disclosure"] { margin-bottom: 0.25rem; font-size: 0.75rem; }
+${S} [data-slot="aui_thinking-disclosure"] [data-slot="aui_thinking-body"] {
+  padding-left: 0;
+  color: color-mix(in srgb, var(--dt-muted-foreground) 82%, transparent);
+  font-size: 0.75rem;
+  line-height: 1.3125rem;
+}
+${S} [data-slot="aui_thinking-disclosure"] [data-slot="aui_thinking-body"].max-h-40 {
+  max-height: 2.625rem !important;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.125rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.125rem), transparent);
+}
 
 /* Timeline rail: keep, but fade until hovered. */
 ${S} [data-slot="thread-timeline"] { opacity: 0.35; transition: opacity 120ms; }

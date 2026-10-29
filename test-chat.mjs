@@ -27,6 +27,8 @@ ${sandbox.css}
     <div data-slot="aui_user-message-root"><span class="composer-human-message">hai</span></div>
     <div data-slot="aui_assistant-message-root" id="a1"><div data-slot="aui_assistant-message-content"><p>halo, ada yang bisa saya bantu?</p></div></div>
     <div data-slot="aui_assistant-message-root" id="a2"><div data-slot="aui_assistant-message-content"><p>lanjutan jawaban</p></div></div>
+    <div data-slot="aui_thinking-disclosure" id="think1"><div class="mt-0.5 w-full min-w-0 max-w-full overflow-auto max-h-40" data-slot="aui_thinking-body"><div>rincian penalaran yang panjang sekali</div></div></div>
+    <div data-slot="aui_thinking-disclosure" id="think2"><div class="mt-0.5 w-full min-w-0 max-w-full overflow-auto" data-slot="aui_thinking-body"><div>dibuka sendiri oleh pembaca</div></div></div>
   </div>
 </div>
 <pre id="result"></pre>
@@ -67,20 +69,37 @@ const check = async () => {
     if (a2.hasAttribute('data-rounded-agent-head')) errors.push('a run of replies must be labelled once')
 
     const root = getComputedStyle(a1)
-    if (root.paddingLeft !== '40px') errors.push('avatar must own a gutter: ' + root.paddingLeft)
+    if (root.paddingLeft !== '0px') errors.push('a reply must not indent away from the human turn: ' + root.paddingLeft)
     const avatar = cls(a1)
-    if (avatar.width !== '30px' || avatar.height !== '30px') errors.push('avatar size: ' + avatar.width + 'x' + avatar.height)
+    if (avatar.width !== '18px' || avatar.height !== '18px') errors.push('avatar size: ' + avatar.width + 'x' + avatar.height)
+    if (avatar.left !== '-21px') errors.push('the avatar must hang in the transcript padding, not in the column: ' + avatar.left)
     if (avatar.borderRadius !== '50%') errors.push('avatar must be a circle')
     if (avatar.backgroundColor !== 'rgb(0, 128, 255)') errors.push('avatar must use the profile colour: ' + avatar.backgroundColor)
     if (avatar.content !== '"R"') errors.push('avatar glyph: ' + avatar.content)
     if (getComputedStyle(a1, '::after').content !== '"RivenSSH · sonnet-4.5"') errors.push('name label not rendered')
-    if (getComputedStyle(a1).paddingTop !== '21px') errors.push('a labelled reply must reserve room for its name: ' + getComputedStyle(a1).paddingTop)
+    if (getComputedStyle(a1).paddingTop !== '22px') errors.push('a labelled reply must reserve room for its name: ' + getComputedStyle(a1).paddingTop)
 
     const bubble = getComputedStyle(a1.querySelector('[data-slot="aui_assistant-message-content"]'))
     if (bubble.padding !== '10px 16px') errors.push('bubble padding: ' + bubble.padding)
     if (bubble.borderRadius !== '18px 18px 18px 6px') errors.push('bubble corners: ' + bubble.borderRadius)
     if (bubble.backgroundColor === 'rgba(0, 0, 0, 0)') errors.push('reply must have a chat box')
     if (getComputedStyle(a2.querySelector('[data-slot="aui_assistant-message-content"]')).backgroundColor !== bubble.backgroundColor) errors.push('bubbles must share one surface')
+
+    // The reply box spans the whole turn, exactly like the human turn's row: the
+    // width complaint was an avatar gutter eating 40px out of every bubble.
+    const bubbleNode = a1.querySelector('[data-slot="aui_assistant-message-content"]')
+    if (Math.round(bubbleNode.getBoundingClientRect().width) !== Math.round(a1.getBoundingClientRect().width))
+      errors.push('reply box must span the turn: ' + bubbleNode.getBoundingClientRect().width + ' of ' + a1.getBoundingClientRect().width)
+
+    // Reasoning is minimised: the auto-preview is two lines behind a fade, while
+    // a block the reader opened themselves is untouched.
+    const preview = getComputedStyle(document.querySelector('#think1 [data-slot="aui_thinking-body"]'))
+    if (preview.maxHeight !== '42px') errors.push('the reasoning preview must stay two lines: ' + preview.maxHeight)
+    if (!preview.maskImage.includes('linear-gradient')) errors.push('the reasoning preview must fade out: ' + preview.maskImage)
+    if (getComputedStyle(document.getElementById('think1')).fontSize !== '12px') errors.push('reasoning text must sit quieter: ' + getComputedStyle(document.getElementById('think1')).fontSize)
+    const opened = getComputedStyle(document.querySelector('#think2 [data-slot="aui_thinking-body"]'))
+    if (opened.maxHeight === '42px') errors.push('a reasoning block the reader opened must not be clipped')
+    if (opened.maskImage !== 'none') errors.push('a reasoning block the reader opened must not fade: ' + opened.maskImage)
 
     // A reply appended later (streaming, paging) is picked up with no remount…
     const a3 = document.createElement('div')
