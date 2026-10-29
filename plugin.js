@@ -1032,9 +1032,34 @@ function mountChatPersona(ctx) {
   let me = { name: ownerKey() }
   let timer = 0
 
+  // The speaker's model has to be the one the chat box is showing. `state.model`
+  // is the composer's own selection, and the app re-scopes that atom from
+  // storage whenever the session changes — so a model picked in the pill can
+  // trail it, and the label kept the old name until the reader switched tabs.
+  // The pill in the composer is the app's live answer for the surface in front
+  // of the reader, so read that first and keep the atom as the fallback (a cold
+  // chat, a tile with no pill of its own).
+  const PILL_SEL = '[data-tour="model-pill"]'
+  const pillNode = () =>
+    document.querySelector(PILL_SEL) ||
+    document.querySelector('form[data-slot="composer-root"] button[aria-label*="model" i]')
+  const pillModel = () => {
+    const pill = pillNode()
+    if (!pill) return ''
+    const text = (pill.textContent || '').replace(/\s+/g, ' ').trim()
+    // The pill says `none` when the surface has no model picked; that is the
+    // absence of a name, not a model called none.
+    if (text && !/^none$/i.test(text)) return text.slice(0, 40)
+    // A compact pill draws only a chevron, so the model lives in its label
+    // ("Model · Provider: slug"); a pill with no model at all says
+    // "Switch model" / "Open model picker", which names no model.
+    const aria = (pill.getAttribute('aria-label') || '').split(':').pop().trim()
+    return /model|none|picker/i.test(aria) ? '' : shortModel(aria)
+  }
+
   const identity = () => {
     const name = label(me)
-    const model = shortModel(host.state.model.get())
+    const model = pillModel() || shortModel(host.state.model.get())
     return {
       color: sdk.profileColor?.(me.name) ?? '',
       initial: (name || 'A').slice(0, 1),
@@ -1222,6 +1247,35 @@ function mountChatPersona(ctx) {
   // added nodes instead of scanning the whole transcript on every batch.
   const carriesTurn = node =>
     node.nodeType === 1 && (node.matches?.(AGENT_TURN_SEL) || Boolean(node.querySelector?.(AGENT_TURN_SEL)))
+  // A pick repaints the pill, not the transcript, and the atom behind
+  // `state.model` can trail it. Watching the pill itself keeps the speaker line
+  // on the same name the composer shows, with no tab switch in between; the node
+  // is re-attached whenever React swaps it (the aria-label check included).
+  let watchedPill = null
+  let pillReady = false
+  const pillObserver = new MutationObserver(() => hydrate(false))
+  const watchPill = () => {
+    const pill = pillNode()
+    if (pill === watchedPill) return
+    watchedPill = pill
+    pillObserver.disconnect()
+    if (pill) {
+      pillObserver.observe(pill, {
+        attributeFilter: ['aria-label'],
+        attributes: true,
+        characterData: true,
+        childList: true,
+        subtree: true
+      })
+    }
+    // A pill that was swapped or unmounted IS a change of source: the node we
+    // were watching named a model a moment ago, and the debounced pass only
+    // dresses replies that were never stamped.
+    if (pillReady) hydrate(false)
+    pillReady = true
+  }
+  watchPill()
+
   const observer = new MutationObserver(records => {
     let stamp = false
     let faceStale = false
@@ -1233,6 +1287,7 @@ function mountChatPersona(ctx) {
       for (const node of record.addedNodes) if (carriesTurn(node)) stamp = true
     }
     if (faceStale) faceMemo = { name: null, at: 0, node: null }
+    watchPill()
     if (stamp) hydrate(true)
     later()
   })
@@ -1251,6 +1306,7 @@ function mountChatPersona(ctx) {
 
   ctx.onDispose(() => {
     observer.disconnect()
+    pillObserver.disconnect()
     clearTimeout(timer)
     unsubs.forEach(u => u())
     for (const node of document.querySelectorAll(AGENT_TURN_SEL)) {

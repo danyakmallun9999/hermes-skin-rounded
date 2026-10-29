@@ -43,6 +43,7 @@ ${sandbox.css}
     <div data-slot="aui_thinking-disclosure" id="think2"><div class="mt-0.5 w-full min-w-0 max-w-full overflow-auto" data-slot="aui_thinking-body"><div>dibuka sendiri oleh pembaca</div></div></div>
   </div>
 </div>
+<form data-slot="composer-root"><button type="button" data-tour="model-pill" aria-label="Model · OpenRouter: anthropic/claude-sonnet-4.5">sonnet-4.5<svg></svg></button></form>
 <pre id="result"></pre>
 <script>
 const round = 2;
@@ -116,6 +117,42 @@ const check = async () => {
     if (avatar.content !== 'none') errors.push('a drawn face must keep the monogram off: ' + avatar.content)
     if (getComputedStyle(a1, '::after').content !== '"RivenSSH · sonnet-4.5"') errors.push('name label not rendered')
     if (getComputedStyle(a1).paddingTop !== '22px') errors.push('a labelled reply must reserve room for its name: ' + getComputedStyle(a1).paddingTop)
+
+    // The speaker's model is the one the composer is showing. A pick repaints the
+    // pill and can leave state.model behind (the app re-scopes that atom from
+    // storage when the session changes), so reading the atom alone kept the old
+    // name on screen until the reader switched tabs.
+    const pill = document.querySelector('[data-tour="model-pill"]')
+    pill.textContent = 'kucing-free'
+    await wait(60)
+    if (a1.getAttribute('data-rounded-agent-label') !== 'RivenSSH · kucing-free')
+      errors.push('the speaker line must follow the model picked in the composer: ' + a1.getAttribute('data-rounded-agent-label'))
+    if (model.get() !== 'openrouter/anthropic/claude-sonnet-4.5') errors.push('the fixture must not move the atom behind the label test')
+    // A compact pill draws only a chevron; the model lives in its label.
+    const compact = document.createElement('button')
+    compact.setAttribute('aria-label', 'Model · OpenRouter: anthropic/claude-opus-4.5')
+    compact.innerHTML = '<svg></svg>'
+    pill.replaceWith(compact)
+    await wait(60)
+    if (a1.getAttribute('data-rounded-agent-label') !== 'RivenSSH · opus-4.5')
+      errors.push('a compact pill must still name the model: ' + a1.getAttribute('data-rounded-agent-label'))
+    // With no pill on screen the atom is still the only source for a fresh chat.
+    compact.remove()
+    const cold = document.createElement('div')
+    cold.setAttribute('data-slot', 'aui_assistant-message-root')
+    cold.innerHTML = '<div data-slot="aui_assistant-message-content"><p>chat dingin</p></div>'
+    document.querySelector('[data-slot="aui_thread-content"] > div').appendChild(cold)
+    await wait(60)
+    if (cold.getAttribute('data-rounded-agent-label') !== 'RivenSSH · sonnet-4.5')
+      errors.push('with no pill the model must come from the SDK atom: ' + cold.getAttribute('data-rounded-agent-label'))
+    cold.remove()
+    const restorePill = document.createElement('button')
+    restorePill.setAttribute('type', 'button')
+    restorePill.setAttribute('data-tour', 'model-pill')
+    restorePill.setAttribute('aria-label', 'Model · OpenRouter: anthropic/claude-sonnet-4.5')
+    restorePill.textContent = 'sonnet-4.5'
+    document.querySelector('form[data-slot="composer-root"]').appendChild(restorePill)
+    await wait(200)
 
     const bubble = getComputedStyle(a1.querySelector('[data-slot="aui_assistant-message-content"]'))
     if (bubble.padding !== '10px 16px') errors.push('bubble padding: ' + bubble.padding)
@@ -279,7 +316,7 @@ const run = spawnSync(
     '--no-sandbox',
     '--disable-gpu',
     '--no-proxy-server',
-    '--virtual-time-budget=3000',
+    '--virtual-time-budget=6000',
     `--user-data-dir=${join(dir, 'browser')}`,
     '--dump-dom',
     `file://${join(dir, 'fixture.html')}`
@@ -290,4 +327,4 @@ assert.equal(run.status, 0, run.stderr)
 const result = run.stdout.match(/<pre id="result">(.*?)<\/pre>/s)
 assert.ok(result, run.stdout)
 assert.deepEqual(JSON.parse(result[1]), [])
-console.log('PASS: Chromium computed styles — reply avatar from the focused chat\'s profile (never the gateway route), the bot\'s own pet or blob face in the same 18px hang, monogram fallback, speaker label once per run, no persona on a background tile, bubble width and surface, late and empty replies, clean uninstall.')
+console.log('PASS: Chromium computed styles — reply avatar from the focused chat\'s profile (never the gateway route), the bot\'s own pet or blob face in the same 18px hang, monogram fallback, speaker label once per run that follows the model picked in the composer, no persona on a background tile, bubble width and surface, late and empty replies, clean uninstall.')

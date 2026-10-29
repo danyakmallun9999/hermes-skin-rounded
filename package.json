@@ -1,6 +1,6 @@
 {
   "name": "hermes-skin-rounded",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "Modern rounded skin and themes for Hermes Desktop",
   "main": "plugin.js",
   "type": "module",

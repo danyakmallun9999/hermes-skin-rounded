@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.4
+
+The speaker line lied about the model until you switched tabs.
+
+- Root cause: the persona read the model from `state.model`, which is the composer's own selection atom (`$currentModel`) — and the app re-scopes that atom from per-scope storage when the session changes. A model picked in the composer's pill repaints the pill and can leave that atom behind, so the label kept the old name and only caught up when the reader switched session tabs and the atom was re-read.
+- Fix: the label now takes the model from the pill itself — the app's live answer for the surface in front of the reader (`[data-tour="model-pill"]` on the primary chat, else the composer's model button, else that button's `aria-label` for a compact pill that draws only a chevron). `state.model` stays as the fallback for a surface with no pill (a cold chat, a tile).
+- Fix: the pill is watched (`characterData` + `childList` + `aria-label`), so a pick relabels the open transcript immediately; a swapped or unmounted pill counts as a source change too, since the debounced pass only dresses replies that were never stamped.
+- `test-chat.mjs` covers all three: a pill repaint relabels without touching the atom, a compact pill names the model from its label, and a chat with no pill still falls back to the atom. Each fails when reverted (`the speaker line must follow the model picked in the composer`).
+
 ## 1.5.3
 
 Two flickers, both from the theme working on the transcript after it was already on screen.
