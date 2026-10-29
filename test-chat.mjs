@@ -22,6 +22,10 @@ const html = `<html data-hermes-theme="rounded"><head><style>
 ${sandbox.css}
 [data-slot="aui_assistant-message-content"]{min-height:1rem}
 </style></head><body>
+<div id="roster">
+  <div data-roster-key="local::pembuat-ppt"><img alt="" src="data:image/png;base64,UEVU"></div>
+  <div data-roster-key="local::kucing"><svg data-bot-face="kucing" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="16" fill="#0ac85a"/></svg></div>
+</div>
 <div data-slot="aui_thread-content">
   <div data-slot="aui_turn-pair">
     <div data-slot="aui_user-message-root"><span class="composer-human-message">hai</span></div>
@@ -61,7 +65,8 @@ const host = {
   },
   profiles: { list: async () => ({ profiles: [
     { name: 'default', display_name: 'RivenSSH' },
-    { name: 'pembuat-ppt', display_name: 'Pembuat PPT' }
+    { name: 'pembuat-ppt', display_name: 'Pembuat PPT' },
+    { name: 'kucing' }
   ] }) }
 }
 const disposers = []
@@ -142,16 +147,53 @@ const check = async () => {
     if (cls(a1).backgroundColor !== 'rgb(10, 200, 90)') errors.push('bot switch left a stale colour: ' + cls(a1).backgroundColor)
     if (!a1.hasAttribute('data-rounded-agent-head') || a2.hasAttribute('data-rounded-agent-head')) errors.push('bot switch broke the speaker labels')
 
+    // The bot's own face: the roster draws a pet for this bot, so the reply
+    // wears that pet instead of a monogram — in the same 18px hang, so the
+    // reply box keeps the width of the human turn.
+    const petSlot = a1.querySelector(':scope > [data-rounded-agent-pet]')
+    if (!petSlot) errors.push("the reply must wear the bot's own face")
+    else {
+      if (petSlot.firstElementChild?.tagName !== 'IMG') errors.push('the face must be the roster pet image: ' + petSlot.firstElementChild?.tagName)
+      if (!(petSlot.firstElementChild?.getAttribute('src') || '').includes('UEVU')) errors.push('the pet image was not carried over')
+      const box = getComputedStyle(petSlot)
+      if (box.width !== '18px' || box.height !== '18px') errors.push('the face must fill the 18px hang: ' + box.width + 'x' + box.height)
+      if (box.left !== '-21px') errors.push('the face must hang in the transcript padding: ' + box.left)
+    }
+    if (cls(a1).content !== 'none') errors.push('a face must replace the monogram, not stack on it: ' + cls(a1).content)
+    if (a2.querySelector('[data-rounded-agent-pet]')) errors.push('only the reply that introduces the speaker wears a face')
+    if (Math.round(bubbleNode.getBoundingClientRect().width) !== Math.round(a1.getBoundingClientRect().width))
+      errors.push('the face must not narrow the reply box: ' + bubbleNode.getBoundingClientRect().width + ' of ' + a1.getBoundingClientRect().width)
+
     // A background tile is not the focused chat, so it wears no persona at all.
-    const tileAvatar = getComputedStyle(document.getElementById('tile-a'), '::before')
+    const tileA = document.getElementById('tile-a')
+    const tileAvatar = getComputedStyle(tileA, '::before')
     if (tileAvatar.content !== 'none') errors.push('a background tile must not wear the focused bot: ' + tileAvatar.content)
-    if (getComputedStyle(document.getElementById('tile-a')).paddingTop !== '0px') errors.push('a background tile must keep its line: ' + getComputedStyle(document.getElementById('tile-a')).paddingTop)
-    const focusedTile = getComputedStyle(document.getElementById('tile-b'), '::before')
-    if (focusedTile.content !== '"P"') errors.push('the focused tile must show its speaker: ' + focusedTile.content)
+    if (getComputedStyle(tileA).paddingTop !== '0px') errors.push('a background tile must keep its line: ' + getComputedStyle(tileA).paddingTop)
+    const tileASlot = tileA.querySelector('[data-rounded-agent-pet]')
+    if (tileASlot && getComputedStyle(tileASlot).display !== 'none') errors.push("a background tile must not show the focused bot's face")
+    const tileBSlot = document.getElementById('tile-b').querySelector('[data-rounded-agent-pet]')
+    if (tileBSlot?.firstElementChild?.tagName !== 'IMG') errors.push("the focused tile must show its speaker's face")
+
+    // A bot whose roster avatar is a blob shape wears that shape, not a letter.
+    focused.set('kucing')
+    await wait(250)
+    const shapeSlot = a1.querySelector(':scope > [data-rounded-agent-pet]')
+    if (shapeSlot?.firstElementChild?.tagName.toLowerCase() !== 'svg') errors.push('a shape bot must wear its blob: ' + shapeSlot?.firstElementChild?.tagName)
+    if (a1.getAttribute('data-rounded-agent-label') !== 'kucing · sonnet-4.5') errors.push('shape bot label: ' + a1.getAttribute('data-rounded-agent-label'))
+
+    // A bot the roster does not draw falls back to its monogram, and drops the
+    // pet it borrowed a moment ago.
+    focused.set('tanpa-wajah')
+    await wait(250)
+    if (a1.querySelector('[data-rounded-agent-pet]')) errors.push('a bot with no roster face must not keep a stale pet')
+    if (a1.hasAttribute('data-rounded-agent-face')) errors.push('stale face flag left behind')
+    if (cls(a1).content !== '"t"') errors.push('a bot with no roster face falls back to its monogram: ' + cls(a1).content)
 
     disposers.forEach(fn => fn())
     if (document.querySelector(rootSel + '[data-rounded-agent-initial]')) errors.push('uninstall left stamps behind')
     if (document.querySelector(rootSel + '[data-rounded-agent-label]')) errors.push('uninstall left labels behind')
+    if (document.querySelector('[data-rounded-agent-pet]')) errors.push('uninstall left a face behind')
+    if (document.querySelector(rootSel + '[data-rounded-agent-face]')) errors.push('uninstall left a face flag behind')
   } catch (e) { errors.push('SCRIPT ERROR: ' + e.message) }
   document.getElementById('result').textContent = JSON.stringify(errors)
 }
@@ -177,4 +219,4 @@ assert.equal(run.status, 0, run.stderr)
 const result = run.stdout.match(/<pre id="result">(.*?)<\/pre>/s)
 assert.ok(result, run.stdout)
 assert.deepEqual(JSON.parse(result[1]), [])
-console.log('PASS: Chromium computed styles — reply avatar from the focused chat\'s profile (never the gateway route), speaker label once per run, no persona on a background tile, bubble width and surface, late and empty replies, clean uninstall.')
+console.log('PASS: Chromium computed styles — reply avatar from the focused chat\'s profile (never the gateway route), the bot\'s own pet or blob face in the same 18px hang, monogram fallback, speaker label once per run, no persona on a background tile, bubble width and surface, late and empty replies, clean uninstall.')

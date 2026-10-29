@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0
+
+- The reply avatar is now the bot's own face instead of a letter: the skin borrows the avatar node the roster row (`[data-roster-key]`) draws for that profile — a petdex sprite, a profile photo, or the bot's blob shape — and clones it into the persona slot. Reading the rendered node keeps the skin out of another plugin's storage and shows the chat exactly the companion the sidebar shows, including a pet the reader hatched or picked.
+- Layout is unchanged on purpose: the face occupies the same 18px hang in the transcript's side padding as the monogram, so the reply box still spans the full width of the human turn. The fixture re-asserts width parity with a face painted.
+- A bot the roster does not draw falls back to its monogram, and a bot that loses its face mid-session drops the borrowed pet rather than keeping a stale one. The roster's own face nodes animate, so the clone is taken once per source node instead of on every pass.
+- `test-chat.mjs` gains a roster fixture: an image pet, a blob-shape bot, a monogram fallback, "only the reply that introduces the speaker wears a face", and no face on a background tile. Each of the three checks fails if its rule is reverted.
+
 ## 1.4.2
 
 - Fix: the speaker label was pinned to `host.state.profile`, the profile the gateway socket is homed on. Tab and tile focus move without swapping that socket, so every session wore whichever bot last owned the route — opening a `default` session while routed to `pembuat-ppt` still read `pembuat-ppt · OpenCode`.

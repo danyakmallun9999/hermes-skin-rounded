@@ -7,7 +7,7 @@
  *   3. Solid colors: non-transparent design optimized for Linux (Omarchy/Hyprland), macOS, and Windows.
  *   4. 12 editor palettes registered via the THEMES_AREA contribution.
  *   5. Centered reading column, rounded composer, and Claude-inspired ergonomics.
- *   6. Chat persona: every reply carries the profile avatar + speaker label and answers in its own bubble.
+ *   6. Chat persona: every reply carries the bot's own face (pet, photo, or shape) + speaker label and answers in its own bubble.
  *
  * Repo: https://github.com/danyakmallun9999/hermes-skin-rounded
  */
@@ -680,6 +680,29 @@ ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before {
   pointer-events: none;
   user-select: none;
 }
+/* The bot's own face, when the roster draws one: a pet sprite, a photo, or its
+   blob shape. It fills the same 18px hang as the monogram, so the reply keeps
+   the width of the human turn — the face replaces the letter, never the layout. */
+${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-face]::before { content: none; }
+${S} [data-rounded-agent-pet] {
+  position: absolute;
+  top: 1.4375rem;
+  left: calc(-1 * var(--rounded-agent-hang));
+  display: grid;
+  place-items: center;
+  width: var(--rounded-agent-avatar);
+  height: var(--rounded-agent-avatar);
+  pointer-events: none;
+  user-select: none;
+}
+${S} [data-rounded-agent-pet] > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 22%;
+  object-fit: cover;
+}
+${S} [data-rounded-agent-pet] > svg { display: block; width: 100%; height: 100%; }
 /* A background tile is dimmed and its owner is not the focused chat, so it must
    not wear that chat's persona: strip the label and the avatar, and hand the
    reserved line back. Focus follows the click, and the re-stamp follows focus. */
@@ -690,6 +713,7 @@ ${S} [data-session-anchor^="session-tile:"][data-chat-unfocused] [data-slot="aui
 ${S} [data-session-anchor^="session-tile:"][data-chat-unfocused] [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::after {
   content: none;
 }
+${S} [data-session-anchor^="session-tile:"][data-chat-unfocused] [data-rounded-agent-pet] { display: none; }
 ${S} [data-slot="aui_assistant-message-root"] > [data-slot="aui_assistant-message-content"] {
   min-width: 0;
   padding: 0.625rem 1rem;
@@ -1000,7 +1024,49 @@ function mountChatPersona(ctx) {
     }
   }
 
-  const decorate = node => {
+  // The bot's own face — pet sprite, photo, or blob shape — is whatever the
+  // roster row for that profile draws. Borrowing the rendered node keeps this
+  // skin out of another plugin's storage and shows the chat exactly the avatar
+  // the sidebar shows, including a pet the reader hatched or picked.
+  const FACE_ATTR = 'data-rounded-agent-face'
+  const PET_ATTR = 'data-rounded-agent-pet'
+  const rosterFace = name => {
+    const key = profileKey(name)
+    for (const row of document.querySelectorAll('[data-roster-key]')) {
+      const rowKey = row.getAttribute('data-roster-key') || ''
+      if (rowKey !== key && !rowKey.endsWith(`::${key}`)) continue
+      const face =
+        row.querySelector('img[src]') ||
+        row.querySelector('svg[data-bot-face]') ||
+        row.querySelector('svg[data-hb-math]')
+      if (face) return face
+    }
+    return null
+  }
+
+  // Only the reply that introduces the speaker wears a face, and the roster's
+  // own face nodes animate: clone once per source node, not on every pass, or
+  // the transcript would churn on each animation frame.
+  const paintFace = (node, face) => {
+    let slot = node.querySelector(`:scope > [${PET_ATTR}]`)
+    if (!face) {
+      node.removeAttribute(FACE_ATTR)
+      slot?.remove()
+      return
+    }
+    node.setAttribute(FACE_ATTR, '')
+    if (!slot) {
+      slot = document.createElement('span')
+      slot.setAttribute(PET_ATTR, '')
+      node.prepend(slot)
+    }
+    if (slot.__roundedFace !== face) {
+      slot.__roundedFace = face
+      slot.replaceChildren(face.cloneNode(true))
+    }
+  }
+
+  const decorate = (node, face) => {
     const who = identity()
     if (who.color) node.style.setProperty('--rounded-agent-color', who.color)
     node.setAttribute('data-rounded-agent-initial', who.initial)
@@ -1008,20 +1074,31 @@ function mountChatPersona(ctx) {
     // Label the speaker once per run of replies, the way a chat app does.
     const prev = node.previousElementSibling
     node.toggleAttribute('data-rounded-agent-head', !(prev && prev.matches(AGENT_TURN_SEL)))
+    paintFace(node, node.hasAttribute('data-rounded-agent-head') ? face : null)
   }
 
   // `fresh` only picks up replies that were never stamped, so a streaming turn
   // does not re-walk the whole transcript. An identity change takes the slow
   // path and re-stamps everything.
+  let faceSrc = null
   const hydrate = fresh => {
+    const face = rosterFace(me.name)
+    faceSrc = face
     const nodes = fresh
       ? document.querySelectorAll(`${AGENT_TURN_SEL}:not([data-rounded-agent-initial])`)
       : document.querySelectorAll(AGENT_TURN_SEL)
-    for (const node of nodes) decorate(node)
+    for (const node of nodes) decorate(node, face)
   }
   const later = () => {
     if (timer) return
-    timer = setTimeout(() => { timer = 0; hydrate(true) }, 150)
+    timer = setTimeout(() => {
+      timer = 0
+      // The roster can mount after the transcript, and a bot can change its
+      // avatar mid-session: when the borrowed face is no longer the live one,
+      // take the slow path so replies already on screen pick it up.
+      if (rosterFace(me.name) !== faceSrc) hydrate(false)
+      else hydrate(true)
+    }, 150)
   }
 
   const load = () => host.profiles.list().then(r => {
@@ -1054,6 +1131,8 @@ function mountChatPersona(ctx) {
       node.removeAttribute('data-rounded-agent-initial')
       node.removeAttribute('data-rounded-agent-label')
       node.removeAttribute('data-rounded-agent-head')
+      node.removeAttribute(FACE_ATTR)
+      node.querySelector(`:scope > [${PET_ATTR}]`)?.remove()
       node.style.removeProperty('--rounded-agent-color')
     }
   })
