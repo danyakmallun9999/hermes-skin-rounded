@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.2
+
+- Fix: the avatar never showed up in the real window even though the face was painted. It was anchored with a negative offset (`left: -21px`, `top: 23px`) so that it hung in the transcript's side padding — but a negative offset leaves the element's own box, and any scrolling or clipping ancestor cuts it off. The avatar now sits at `0/0`, in the header line the reply already reserves for the speaker, and the speaker label starts after it (`padding-left: 18px + 6px`). Same 18px face, same bubble width, nothing outside the turn box to be clipped.
+- The label's line height now matches the avatar's, so the name and the face share one baseline instead of drifting.
+- `test-chat.mjs` asserts the avatar and the face are anchored at `0/0` inside the reply, that the label clears them, and that the face's rect never starts left of the reply's own rect. Reverting to the negative offset fails the suite (`the avatar must sit in the turn header, not outside it`).
+
 ## 1.5.1
 
 - Fix: the avatar could end up as a bare letter — or as nothing at all — because the face was taken as a node instead of as data. Three causes, all closed:

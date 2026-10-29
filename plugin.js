@@ -636,12 +636,15 @@ ${S} .composer-human-message {
 /* Assistant turn: a counterpart with a profile, answering in its own bubble.
    The human turn is already a glass card on the right; the reply mirrors it on
    the left, so the transcript reads as a conversation instead of prose under a
-   prompt. The avatar hangs in the transcript's own 24px side padding instead of
-   reserving a gutter inside the column: a reply spans the full width of the
-   human turn, and only the first reply of a run introduces the speaker. */
+   prompt. The avatar sits in the header line the reply already reserves for the
+   speaker, NOT outside the turn: a negative offset depends on the transcript's
+   side padding and gets clipped the moment an ancestor scrolls — the avatar then
+   exists but never shows. Anchored at 0 it cannot leave the box, and because the
+   header line is in the turn's own padding the bubble keeps the full width of
+   the human turn. Only the first reply of a run introduces the speaker. */
 ${S} [data-slot="aui_assistant-message-root"] {
   --rounded-agent-avatar: 1.125rem;
-  --rounded-agent-hang: 1.3125rem;
+  --rounded-agent-gap: 0.375rem;
   position: relative;
   padding-left: 0;
 }
@@ -652,10 +655,11 @@ ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::after {
   top: 0;
   right: 0;
   left: 0;
+  padding-left: calc(var(--rounded-agent-avatar) + var(--rounded-agent-gap));
   overflow: hidden;
   color: var(--dt-muted-foreground);
   font-size: 0.75rem;
-  line-height: 1.125rem;
+  line-height: var(--rounded-agent-avatar);
   white-space: nowrap;
   text-overflow: ellipsis;
   pointer-events: none;
@@ -663,8 +667,8 @@ ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::after {
 ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before {
   content: attr(data-rounded-agent-initial);
   position: absolute;
-  top: 1.4375rem;
-  left: calc(-1 * var(--rounded-agent-hang));
+  top: 0;
+  left: 0;
   display: grid;
   place-items: center;
   width: var(--rounded-agent-avatar);
@@ -673,7 +677,7 @@ ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before {
   background: var(--rounded-agent-color, var(--dt-primary));
   color: var(--dt-primary-foreground);
   font-family: var(--dt-font-sans);
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-weight: 700;
   line-height: 1;
   text-transform: uppercase;
@@ -681,13 +685,14 @@ ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before {
   user-select: none;
 }
 /* The bot's own face, when the roster draws one: a pet sprite, a photo, or its
-   blob shape. It fills the same 18px hang as the monogram, so the reply keeps
-   the width of the human turn — the face replaces the letter, never the layout. */
+   blob shape. It takes the monogram's exact 18px seat in the header line, so the
+   reply keeps the width of the human turn — the face replaces the letter, never
+   the layout, and never sits outside the box where a scroll container clips it. */
 ${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-face]::before { content: none; }
 ${S} [data-rounded-agent-pet] {
   position: absolute;
-  top: 1.4375rem;
-  left: calc(-1 * var(--rounded-agent-hang));
+  top: 0;
+  left: 0;
   display: grid;
   place-items: center;
   width: var(--rounded-agent-avatar);

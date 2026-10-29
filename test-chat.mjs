@@ -102,7 +102,11 @@ const check = async () => {
     if (root.paddingLeft !== '0px') errors.push('a reply must not indent away from the human turn: ' + root.paddingLeft)
     const avatar = cls(a1)
     if (avatar.width !== '18px' || avatar.height !== '18px') errors.push('avatar size: ' + avatar.width + 'x' + avatar.height)
-    if (avatar.left !== '-21px') errors.push('the avatar must hang in the transcript padding, not in the column: ' + avatar.left)
+    // The avatar must sit INSIDE the turn box: a negative offset is invisible as
+    // soon as an ancestor scroll container clips it.
+    if (avatar.left !== '0px' || avatar.top !== '0px') errors.push('the avatar must sit in the turn header, not outside it: ' + avatar.top + '/' + avatar.left)
+    const headLabel = getComputedStyle(a1, '::after')
+    if (headLabel.paddingLeft !== '24px') errors.push('the speaker label must clear the avatar: ' + headLabel.paddingLeft)
     if (avatar.borderRadius !== '50%') errors.push('avatar must be a circle')
     if (avatar.backgroundColor !== 'rgb(0, 128, 255)') errors.push('avatar must use the profile colour: ' + avatar.backgroundColor)
     // The opened bot wears a face from the start: its own if the roster draws
@@ -172,7 +176,10 @@ const check = async () => {
       if (!(petSlot.firstElementChild?.getAttribute('src') || '').includes('UEVU')) errors.push('the pet image was not carried over')
       const box = getComputedStyle(petSlot)
       if (box.width !== '18px' || box.height !== '18px') errors.push('the face must fill the 18px hang: ' + box.width + 'x' + box.height)
-      if (box.left !== '-21px') errors.push('the face must hang in the transcript padding: ' + box.left)
+      if (box.left !== '0px' || box.top !== '0px') errors.push('the face must sit in the turn header, not outside it: ' + box.top + '/' + box.left)
+      const inside = petSlot.getBoundingClientRect()
+      const turn = a1.getBoundingClientRect()
+      if (inside.left < turn.left - 0.5) errors.push('the face must not be drawn outside the reply box: ' + inside.left + ' < ' + turn.left)
       // The roster draws its own copy at 34px inline; the avatar is the hang.
       const drawn = petSlot.firstElementChild.getBoundingClientRect()
       if (Math.round(drawn.width) !== 18 || Math.round(drawn.height) !== 18) errors.push('the face must be drawn at the hang size, not the roster size: ' + drawn.width + 'x' + drawn.height)
