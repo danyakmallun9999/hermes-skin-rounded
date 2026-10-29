@@ -697,12 +697,16 @@ ${S} [data-rounded-agent-pet] {
 }
 ${S} [data-rounded-agent-pet] > img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: var(--rounded-agent-avatar);
+  height: var(--rounded-agent-avatar);
   border-radius: 22%;
   object-fit: cover;
 }
-${S} [data-rounded-agent-pet] > svg { display: block; width: 100%; height: 100%; }
+${S} [data-rounded-agent-pet] > svg {
+  display: block;
+  width: var(--rounded-agent-avatar);
+  height: var(--rounded-agent-avatar);
+}
 /* A background tile is dimmed and its owner is not the focused chat, so it must
    not wear that chat's persona: strip the label and the avatar, and hand the
    reserved line back. Focus follows the click, and the re-stamp follows focus. */
@@ -1030,26 +1034,90 @@ function mountChatPersona(ctx) {
   // the sidebar shows, including a pet the reader hatched or picked.
   const FACE_ATTR = 'data-rounded-agent-face'
   const PET_ATTR = 'data-rounded-agent-pet'
+  const faceNode = el =>
+    el &&
+    (el.tagName === 'IMG'
+      ? el
+      : el.querySelector?.('img[src], svg[data-bot-face], svg[data-hb-math]') || null)
   const rosterFace = name => {
-    const key = profileKey(name)
+    const key = profileKey(name).toLowerCase()
     for (const row of document.querySelectorAll('[data-roster-key]')) {
-      const rowKey = row.getAttribute('data-roster-key') || ''
+      const rowKey = (row.getAttribute('data-roster-key') || '').toLowerCase()
       if (rowKey !== key && !rowKey.endsWith(`::${key}`)) continue
-      const face =
-        row.querySelector('img[src]') ||
-        row.querySelector('svg[data-bot-face]') ||
-        row.querySelector('svg[data-hb-math]')
+      const face = faceNode(row)
       if (face) return face
     }
-    return null
+    // No roster on screen (another tab, a collapsed rail): the same bot can
+    // still be drawn somewhere else — an empty chat, a picker, a header.
+    return (
+      document.querySelector(`svg[data-bot-face=${JSON.stringify(key)}]`) ||
+      document.querySelector(`img[data-bot-photo=${JSON.stringify(key)}]`) ||
+      null
+    )
   }
 
-  // Only the reply that introduces the speaker wears a face, and the roster's
-  // own face nodes animate: clone once per source node, not on every pass, or
-  // the transcript would churn on each animation frame.
+  // Take the face as DATA, not as a node. A clone keeps the roster's own 34px
+  // inline size (which overflows the 18px hang), and a shape face is painted by
+  // the bots plugin's animation frame — cloned before its first paint it is an
+  // empty <svg>, which is an invisible avatar. Rebuild at the hang's size, and
+  // treat "nothing drawable yet" as "no face", so the monogram keeps the slot
+  // warm instead of leaving a hole.
+  const faceSig = face => {
+    if (!face) return ''
+    if (face.tagName === 'IMG') return 'i:' + (face.currentSrc || face.getAttribute('src') || '')
+    const brand = face.getAttribute('data-bot-face') || ''
+    if (face.hasAttribute('data-rounded-blob')) return `b:${brand}`
+    return `s:${brand}:${face.childElementCount}`
+  }
+  const buildFace = face => {
+    if (!face) return null
+    if (face.tagName === 'IMG') {
+      const src = face.currentSrc || face.getAttribute('src')
+      if (!src) return null
+      const img = document.createElement('img')
+      img.alt = ''
+      img.src = src
+      return img
+    }
+    if (face.tagName.toLowerCase() !== 'svg') return null
+    if (!face.childElementCount && !(face.textContent || '').trim()) return null
+    const svg = face.cloneNode(true)
+    svg.removeAttribute('style')
+    svg.setAttribute('width', '18')
+    svg.setAttribute('height', '18')
+    return svg
+  }
+
+  // Nothing draws this bot right now (a collapsed rail, a pane that is not
+  // mounted): fall back to the face Hermes gives any bot without a custom
+  // appearance — the same deterministic blob, drawn by the SDK — so the reply
+  // always wears a face instead of a bare letter.
+  const sdkFace = name => {
+    const draw = typeof sdk.blobatarSvg === 'function' ? sdk.blobatarSvg : null
+    if (!draw || !name) return null
+    try {
+      const markup = draw(String(name), { size: 18 })
+      if (!markup) return null
+      const box = document.createElement('div')
+      box.innerHTML = markup
+      const svg = box.firstElementChild
+      if (!svg || svg.tagName.toLowerCase() !== 'svg') return null
+      svg.setAttribute('data-bot-face', String(name))
+      svg.setAttribute('data-rounded-blob', '')
+      return svg
+    } catch {
+      return null
+    }
+  }
+
+  // Only the reply that introduces the speaker wears a face, and the signature
+  // keeps it stable: a live face repaints every frame, so comparing nodes (or
+  // markup) would churn the transcript on each pass.
   const paintFace = (node, face) => {
     let slot = node.querySelector(`:scope > [${PET_ATTR}]`)
-    if (!face) {
+    const sig = faceSig(face)
+    const built = sig ? buildFace(face) : null
+    if (!built) {
       node.removeAttribute(FACE_ATTR)
       slot?.remove()
       return
@@ -1060,10 +1128,19 @@ function mountChatPersona(ctx) {
       slot.setAttribute(PET_ATTR, '')
       node.prepend(slot)
     }
-    if (slot.__roundedFace !== face) {
-      slot.__roundedFace = face
-      slot.replaceChildren(face.cloneNode(true))
-    }
+    if (slot.__roundedSig === sig) return
+    slot.__roundedSig = sig
+    slot.replaceChildren(built)
+  }
+
+  // The roster's face is the bot's real pet; the SDK blob is the shape Hermes
+  // gives a bot with no custom look. Either one beats a bare letter.
+  const faceFor = name => {
+    const roster = rosterFace(name)
+    // A roster face that has nothing to draw yet (a shape painted by another
+    // plugin's animation frame) still loses to a face we can draw now.
+    if (roster && buildFace(roster)) return roster
+    return sdkFace(name)
   }
 
   const decorate = (node, face) => {
@@ -1082,8 +1159,8 @@ function mountChatPersona(ctx) {
   // path and re-stamps everything.
   let faceSrc = null
   const hydrate = fresh => {
-    const face = rosterFace(me.name)
-    faceSrc = face
+    const face = faceFor(me.name)
+    faceSrc = faceSig(face)
     const nodes = fresh
       ? document.querySelectorAll(`${AGENT_TURN_SEL}:not([data-rounded-agent-initial])`)
       : document.querySelectorAll(AGENT_TURN_SEL)
@@ -1096,7 +1173,7 @@ function mountChatPersona(ctx) {
       // The roster can mount after the transcript, and a bot can change its
       // avatar mid-session: when the borrowed face is no longer the live one,
       // take the slow path so replies already on screen pick it up.
-      if (rosterFace(me.name) !== faceSrc) hydrate(false)
+      if (faceSig(faceFor(me.name)) !== faceSrc) hydrate(false)
       else hydrate(true)
     }, 150)
   }

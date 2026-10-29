@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1
+
+- Fix: the avatar could end up as a bare letter — or as nothing at all — because the face was taken as a node instead of as data. Three causes, all closed:
+  - A clone kept the roster's own inline `34px` size, so the face was drawn bigger than the 18px hang. Faces are now rebuilt at the hang's size (`img` re-created from its `src`, `svg` re-cloned without the inline style).
+  - A shape face is painted by the bots plugin's animation clock. Cloned before its first paint it is an empty `<svg>` — an avatar that draws nothing while the monogram was already switched off. An undrawable face now loses the slot instead of claiming it, and the reply takes the real face as soon as it paints.
+  - When no roster row was mounted (another tab, a collapsed rail) the reply fell back to a letter. It now wears the shape the SDK draws for that bot (`sdk.blobatarSvg`, the same deterministic blob the roster shows a bot with no custom appearance), so a reply always has a face. The roster still wins whenever it is on screen, and a face drawn elsewhere in the app (`svg[data-bot-face]` in an empty chat or a picker) is used too.
+- Roster keys now match case-insensitively, so `Local::Default` and `default` are the same bot.
+- `test-chat.mjs` covers each path: a not-yet-painted shape must not leave an empty slot and must yield to the painted face, a bot with no roster row must still wear its own drawn face, the face must be drawn at 18px rather than the roster's 34px, and with no drawing available at all the monogram must come back. Every one of those checks fails if its rule is reverted.
+
 ## 1.5.0
 
 - The reply avatar is now the bot's own face instead of a letter: the skin borrows the avatar node the roster row (`[data-roster-key]`) draws for that profile — a petdex sprite, a profile photo, or the bot's blob shape — and clones it into the persona slot. Reading the rendered node keeps the skin out of another plugin's storage and shows the chat exactly the companion the sidebar shows, including a pet the reader hatched or picked.

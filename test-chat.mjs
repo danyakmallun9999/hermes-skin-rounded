@@ -23,9 +23,11 @@ ${sandbox.css}
 [data-slot="aui_assistant-message-content"]{min-height:1rem}
 </style></head><body>
 <div id="roster">
-  <div data-roster-key="local::pembuat-ppt"><img alt="" src="data:image/png;base64,UEVU"></div>
-  <div data-roster-key="local::kucing"><svg data-bot-face="kucing" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="16" fill="#0ac85a"/></svg></div>
+  <div data-roster-key="local::pembuat-ppt"><img alt="" src="data:image/png;base64,UEVU" style="width:34px;height:34px"></div>
+  <div data-roster-key="local::kucing"><span style="width:34px;height:34px"><svg data-bot-face="kucing" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="16" fill="#0ac85a"/></svg></span></div>
+  <div data-roster-key="local::jam"><svg data-hb-math="1" width="34" height="34" viewBox="0 0 40 40"></svg></div>
 </div>
+<div data-bot-face="luar"><svg data-bot-face="luar" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#3b82f6"/></svg></div>
 <div data-slot="aui_thread-content">
   <div data-slot="aui_turn-pair">
     <div data-slot="aui_user-message-root"><span class="composer-human-message">hai</span></div>
@@ -47,7 +49,13 @@ const round = 2;
 const profileKey = name => (name ?? '').trim() || 'default'
 const label = p => (p.display_name ?? '').trim() || p.name
 const shortModel = m => (m || '').split('/').pop().replace(/^claude-/, '')
-const sdk = { profileColor: name => ({ default: 'rgb(0, 128, 255)', 'pembuat-ppt': 'rgb(10, 200, 90)' })[name] ?? 'rgb(120, 120, 120)' }
+const sdk = {
+  profileColor: name => ({ default: 'rgb(0, 128, 255)', 'pembuat-ppt': 'rgb(10, 200, 90)' })[name] ?? 'rgb(120, 120, 120)',
+  // Stand-in for blobatar: an SVG blob seeded by the bot's name. NO_BLOB turns
+  // it off so the monogram fallback stays covered.
+  blobatarSvg: (seed, opts) =>
+    window.NO_BLOB ? null : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" width="' + opts.size + '" height="' + opts.size + '" data-blob="' + seed + '"><circle cx="9" cy="9" r="8" fill="#778899"/></svg>'
+}
 const atom = initial => { const subs = []; let value = initial
   return { get: () => value, subscribe: fn => { subs.push(fn); return () => subs.splice(subs.indexOf(fn), 1) },
     set: next => { value = next; subs.forEach(fn => fn()) } } }
@@ -66,7 +74,10 @@ const host = {
   profiles: { list: async () => ({ profiles: [
     { name: 'default', display_name: 'RivenSSH' },
     { name: 'pembuat-ppt', display_name: 'Pembuat PPT' },
-    { name: 'kucing' }
+    { name: 'kucing' },
+    { name: 'jam' },
+    { name: 'luar' },
+    { name: 'tanpa-wajah' }
   ] }) }
 }
 const disposers = []
@@ -94,7 +105,11 @@ const check = async () => {
     if (avatar.left !== '-21px') errors.push('the avatar must hang in the transcript padding, not in the column: ' + avatar.left)
     if (avatar.borderRadius !== '50%') errors.push('avatar must be a circle')
     if (avatar.backgroundColor !== 'rgb(0, 128, 255)') errors.push('avatar must use the profile colour: ' + avatar.backgroundColor)
-    if (avatar.content !== '"R"') errors.push('avatar glyph: ' + avatar.content)
+    // The opened bot wears a face from the start: its own if the roster draws
+    // one, otherwise the shape the SDK gives a bot with no custom look.
+    const startFace = a1.querySelector(':scope > [data-rounded-agent-pet]')
+    if (startFace?.firstElementChild?.getAttribute('data-blob') !== 'default') errors.push('the opened bot must wear a drawn face: ' + startFace?.firstElementChild?.outerHTML?.slice(0, 60))
+    if (avatar.content !== 'none') errors.push('a drawn face must keep the monogram off: ' + avatar.content)
     if (getComputedStyle(a1, '::after').content !== '"RivenSSH · sonnet-4.5"') errors.push('name label not rendered')
     if (getComputedStyle(a1).paddingTop !== '22px') errors.push('a labelled reply must reserve room for its name: ' + getComputedStyle(a1).paddingTop)
 
@@ -158,6 +173,9 @@ const check = async () => {
       const box = getComputedStyle(petSlot)
       if (box.width !== '18px' || box.height !== '18px') errors.push('the face must fill the 18px hang: ' + box.width + 'x' + box.height)
       if (box.left !== '-21px') errors.push('the face must hang in the transcript padding: ' + box.left)
+      // The roster draws its own copy at 34px inline; the avatar is the hang.
+      const drawn = petSlot.firstElementChild.getBoundingClientRect()
+      if (Math.round(drawn.width) !== 18 || Math.round(drawn.height) !== 18) errors.push('the face must be drawn at the hang size, not the roster size: ' + drawn.width + 'x' + drawn.height)
     }
     if (cls(a1).content !== 'none') errors.push('a face must replace the monogram, not stack on it: ' + cls(a1).content)
     if (a2.querySelector('[data-rounded-agent-pet]')) errors.push('only the reply that introduces the speaker wears a face')
@@ -181,13 +199,47 @@ const check = async () => {
     if (shapeSlot?.firstElementChild?.tagName.toLowerCase() !== 'svg') errors.push('a shape bot must wear its blob: ' + shapeSlot?.firstElementChild?.tagName)
     if (a1.getAttribute('data-rounded-agent-label') !== 'kucing · sonnet-4.5') errors.push('shape bot label: ' + a1.getAttribute('data-rounded-agent-label'))
 
-    // A bot the roster does not draw falls back to its monogram, and drops the
-    // pet it borrowed a moment ago.
+    // A shape face is painted by the bots plugin's animation frame. Cloned while
+    // it is still blank it would be an invisible avatar, so a blank face must
+    // never win: the SDK blob holds the hang until the shape draws, and then the
+    // roster's face takes over without a reload.
+    focused.set('jam')
+    await wait(250)
+    const blank = a1.querySelector(':scope > [data-rounded-agent-pet]')
+    if (blank?.firstElementChild?.tagName.toLowerCase() !== 'svg') errors.push('a blank shape must not leave an empty avatar slot: ' + blank?.firstElementChild?.tagName)
+    if (blank?.firstElementChild?.getAttribute('data-blob') !== 'jam') errors.push('a blank shape must fall back to a drawn face, not a letter: ' + blank?.firstElementChild?.outerHTML?.slice(0, 60))
+    document.querySelector('svg[data-hb-math]').innerHTML = '<circle cx="20" cy="20" r="18" fill="#0ac85a"/>'
+    await wait(400)
+    const painted = a1.querySelector(':scope > [data-rounded-agent-pet]')
+    if (painted?.firstElementChild?.tagName.toLowerCase() !== 'svg' || painted.firstElementChild.hasAttribute('data-blob'))
+      errors.push('a painted shape must take over the drawn fallback: ' + painted?.firstElementChild?.outerHTML?.slice(0, 60))
+    if (Math.round(painted.firstElementChild.getBoundingClientRect().width) !== 18) errors.push('the painted shape must be drawn at the hang size')
+
+    // No roster in sight still finds the bot's face elsewhere in the app.
+    focused.set('luar')
+    await wait(250)
+    const elsewhere = a1.querySelector(':scope > [data-rounded-agent-pet]')
+    if (elsewhere?.firstElementChild?.tagName.toLowerCase() !== 'svg') errors.push('a face drawn outside the roster must still be found: ' + elsewhere?.firstElementChild?.tagName)
+
+    // A bot the roster does not draw still wears the shape Hermes gives a bot
+    // with no custom look — never the previous bot's pet.
     focused.set('tanpa-wajah')
     await wait(250)
-    if (a1.querySelector('[data-rounded-agent-pet]')) errors.push('a bot with no roster face must not keep a stale pet')
+    const noRow = a1.querySelector(':scope > [data-rounded-agent-pet]')
+    if (!noRow) errors.push('a bot with no roster row must still wear a face')
+    else if (noRow.firstElementChild?.getAttribute('data-blob') !== 'tanpa-wajah') errors.push('a bot with no roster row must wear its own drawn face: ' + noRow.firstElementChild?.outerHTML?.slice(0, 60))
+    if (cls(a1).content !== 'none') errors.push('a drawn face must keep the monogram off: ' + cls(a1).content)
+
+    // Nothing can draw a face (an SDK without blobatar): the monogram returns
+    // rather than leaving the avatar blank.
+    window.NO_BLOB = true
+    focused.set('default')
+    await wait(250)
+    focused.set('tanpa-wajah')
+    await wait(250)
+    if (a1.querySelector('[data-rounded-agent-pet]')) errors.push('no drawn face must not leave an empty slot')
     if (a1.hasAttribute('data-rounded-agent-face')) errors.push('stale face flag left behind')
-    if (cls(a1).content !== '"t"') errors.push('a bot with no roster face falls back to its monogram: ' + cls(a1).content)
+    if (cls(a1).content !== '"t"') errors.push('with nothing to draw the monogram must return: ' + cls(a1).content)
 
     disposers.forEach(fn => fn())
     if (document.querySelector(rootSel + '[data-rounded-agent-initial]')) errors.push('uninstall left stamps behind')
