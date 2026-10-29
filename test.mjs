@@ -31,8 +31,9 @@ assert.equal(new Set(themes.map(t => t.data.name)).size, 12)
 assert.ok(themes.every(t => t.data.name === 'rounded' || t.data.name.startsWith('rounded-')))
 assert.ok(elements.some(el => el.textContent?.includes('border-radius: var(--rounded-panel-radius)')))
 assert.ok(elements.some(el => el.textContent?.includes('data-hermes-theme^="rounded"')))
-// The chat persona watch is part of register(), not an opt-in: the reply
-// bubbles mean nothing without the profile stamped on them.
-assert.equal(MutationObserverStub.observed, 1, 'register must mount the chat persona watcher')
+// The transcript watchers are part of register(), not an opt-in: the reply
+// bubbles mean nothing without the profile stamped on them, and the empty state
+// must be held so a loading chat never flashes its greeting.
+assert.equal(MutationObserverStub.observed, 2, 'register must mount the transcript watchers (persona + empty state)')
 for (const dispose of disposers.reverse()) dispose()
 console.log('PASS: plugin registers 12 unique Rounded themes, injects scoped CSS, and disposes without errors.')

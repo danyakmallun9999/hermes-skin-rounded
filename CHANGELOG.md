@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.3
+
+Two flickers, both from the theme working on the transcript after it was already on screen.
+
+- Fix: a new reply painted unstamped for one debounce (150ms) and then gained its header — the 22px reserved for the speaker line and the avatar in it — so the bubble looked right and then jumped. Replies are now stamped in the same microtask that announces them, i.e. before the frame is painted; streaming tokens and collapsing disclosures never trigger that path, only a mutation that actually brings a reply along.
+- Fix: reading the bot's face (roster scan + node build) ran on every pass, once per 150ms burst. It is memoised for half a second and dropped the moment anything inside a roster row mutates, so a pet or shape that repaints still wins immediately. `test-chat.mjs` covers the memo: a shape that paints after the first pass must still take over the avatar.
+- Fix: switching bots flashed the empty-state greeting and made the composer jump from the middle of the pane to the bottom when the history landed. The empty state is now held for 400ms after a chat change or after a fresh `aui_intro` mounts — hidden, and with every empty-state rule (`:has([data-slot="aui_intro"]:not([data-rounded-hold]))`) opted out — so the composer stays where a chat with messages keeps it. A chat that is genuinely empty shows its greeting just after the beat; a chat that is loading never shows it at all.
+- New `test-intro.mjs`: a fresh empty state is held and does not paint, the composer stays on the floor while it is held, a release centres the composer, a chat switch and a remounted empty state re-arm the hold, and uninstall clears it. `test.mjs` now expects both transcript watchers.
+- Each of these rules fails its fixture when reverted (`a freshly mounted reply must be stamped before its first paint`, `a fresh empty state must be held`).
+
 ## 1.5.2
 
 - Fix: the avatar never showed up in the real window even though the face was painted. It was anchored with a negative offset (`left: -21px`, `top: 23px`) so that it hung in the transcript's side padding — but a negative offset leaves the element's own box, and any scrolling or clipping ancestor cuts it off. The avatar now sits at `0/0`, in the header line the reply already reserves for the speaker, and the speaker label starts after it (`padding-left: 18px + 6px`). Same 18px face, same bubble width, nothing outside the turn box to be clipped.

@@ -1,12 +1,12 @@
 {
   "name": "hermes-skin-rounded",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Modern rounded skin and themes for Hermes Desktop",
   "main": "plugin.js",
   "type": "module",
   "scripts": {
     "check": "node -c plugin.js",
-    "test": "node test.mjs && node test-layout.mjs && node test-chooser.mjs && node test-chat.mjs"
+    "test": "node test.mjs && node test-layout.mjs && node test-chooser.mjs && node test-chat.mjs && node test-intro.mjs"
   },
   "repository": {
     "type": "git",

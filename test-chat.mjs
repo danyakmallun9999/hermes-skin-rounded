@@ -248,6 +248,18 @@ const check = async () => {
     if (a1.hasAttribute('data-rounded-agent-face')) errors.push('stale face flag left behind')
     if (cls(a1).content !== '"t"') errors.push('with nothing to draw the monogram must return: ' + cls(a1).content)
 
+    // A reply that has just mounted must be dressed by the end of that same task:
+    // its header line reserves 22px and its avatar sits in it, so a stamp applied
+    // a debounce later makes the bubble paint short and then jump — the "glitch"
+    // of a transition that is not smooth.
+    const late = document.createElement('div')
+    late.setAttribute('data-slot', 'aui_assistant-message-root')
+    late.innerHTML = '<div data-slot="aui_assistant-message-content"><p>balasan baru</p></div>'
+    document.querySelector('[data-slot="aui_thread-content"] > div').appendChild(late)
+    await null
+    if (!late.hasAttribute('data-rounded-agent-initial')) errors.push('a freshly mounted reply must be stamped before its first paint')
+    else if (getComputedStyle(late).paddingTop === '0px' && late.hasAttribute('data-rounded-agent-head')) errors.push('a stamped reply must reserve room for its name before paint')
+
     disposers.forEach(fn => fn())
     if (document.querySelector(rootSel + '[data-rounded-agent-initial]')) errors.push('uninstall left stamps behind')
     if (document.querySelector(rootSel + '[data-rounded-agent-label]')) errors.push('uninstall left labels behind')

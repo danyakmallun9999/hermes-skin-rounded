@@ -808,6 +808,15 @@ ${S} form[data-slot="composer-root"] button[data-variant="ghost"][data-size="ico
 /* ── empty state: serif greeting + centered composer ─────────────────────── */
 ${S} [data-slot="aui_intro"] .wordmark { display: none; }
 ${S} [data-slot="aui_intro"] { padding-bottom: 1rem !important; }
+
+/* A thread mounts before its history does: an empty chat that is about to be
+   filled still paints the greeting for a few frames and then wipes it, which
+   reads as a glitch on every bot switch. The intro is held — hidden, and with
+   every empty-state rule below opted out — for one beat after it mounts or after
+   the chat changes. A chat that is genuinely empty shows it a moment later; a
+   chat that is loading never shows it at all, and the composer never jumps from
+   the middle to the bottom. */
+${S} [data-slot="aui_intro"][data-rounded-hold] { visibility: hidden; }
 ${S} [data-slot="aui_intro"] > div {
   display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline;
   column-gap: 0.75rem;
@@ -837,15 +846,15 @@ ${S} [data-slot="aui_intro"] p {
 }
 /* Claude's placeholders. */
 ${S} [data-slot="composer-rich-input"]:is(:empty, [data-empty])::before { content: "Reply to Hermes…"; }
-${S} [data-chat-surface]:has([data-slot="aui_intro"]) [data-slot="composer-rich-input"]:is(:empty, [data-empty])::before { content: "How can I help you today?"; }
-${S} [data-chat-surface]:has([data-slot="aui_intro"]) [data-slot="composer-dock"] {
+${S} [data-chat-surface]:has([data-slot="aui_intro"]:not([data-rounded-hold])) [data-slot="composer-rich-input"]:is(:empty, [data-empty])::before { content: "How can I help you today?"; }
+${S} [data-chat-surface]:has([data-slot="aui_intro"]:not([data-rounded-hold])) [data-slot="composer-dock"] {
   bottom: auto;
   top: 50%;
   margin-top: 0;
 }
 /* The greeting sits in the top half, ending just above the centered composer. */
-${S} [data-chat-surface]:has([data-slot="aui_intro"]) [data-slot="aui_thread-content"] { height: 100%; }
-${S} [data-chat-surface]:has([data-slot="aui_intro"]) [data-slot="aui_thread-content"] > div > div {
+${S} [data-chat-surface]:has([data-slot="aui_intro"]:not([data-rounded-hold])) [data-slot="aui_thread-content"] { height: 100%; }
+${S} [data-chat-surface]:has([data-slot="aui_intro"]:not([data-rounded-hold])) [data-slot="aui_thread-content"] > div > div {
   padding-top: 0 !important;
   align-self: start;
   height: 50%;
@@ -853,7 +862,7 @@ ${S} [data-chat-surface]:has([data-slot="aui_intro"]) [data-slot="aui_thread-con
   justify-content: flex-end;
   padding-bottom: 1.5rem;
 }
-${S} [data-chat-surface]:has([data-slot="aui_intro"]) button[aria-label="Scroll to bottom"] { display: none; }
+${S} [data-chat-surface]:has([data-slot="aui_intro"]:not([data-rounded-hold])) button[aria-label="Scroll to bottom"] { display: none; }
 
 /* Claude's account row: the square profile rail gives way to one
    "avatar · name · model ⌄" row whose menu opens upward. Other themes keep the rail. */
@@ -1159,12 +1168,26 @@ function mountChatPersona(ctx) {
     paintFace(node, node.hasAttribute('data-rounded-agent-head') ? face : null)
   }
 
+  // Reading the face means scanning the roster and building a node, so a stream
+  // of mutations (one per token) must not pay for it every pass. The memo keeps
+  // the work at one build per half second; a face that shows up late is still
+  // picked up within that window.
+  const FACE_TTL = 500
+  let faceMemo = { name: null, at: 0, node: null }
+  const currentFace = () => {
+    const now = Date.now()
+    if (faceMemo.name === me.name && now - faceMemo.at < FACE_TTL) return faceMemo.node
+    const node = faceFor(me.name)
+    faceMemo = { name: me.name, at: now, node }
+    return node
+  }
+
   // `fresh` only picks up replies that were never stamped, so a streaming turn
   // does not re-walk the whole transcript. An identity change takes the slow
   // path and re-stamps everything.
   let faceSrc = null
   const hydrate = fresh => {
-    const face = faceFor(me.name)
+    const face = currentFace()
     faceSrc = faceSig(face)
     const nodes = fresh
       ? document.querySelectorAll(`${AGENT_TURN_SEL}:not([data-rounded-agent-initial])`)
@@ -1178,7 +1201,7 @@ function mountChatPersona(ctx) {
       // The roster can mount after the transcript, and a bot can change its
       // avatar mid-session: when the borrowed face is no longer the live one,
       // take the slow path so replies already on screen pick it up.
-      if (faceSig(faceFor(me.name)) !== faceSrc) hydrate(false)
+      if (faceSig(currentFace()) !== faceSrc) hydrate(false)
       else hydrate(true)
     }, 150)
   }
@@ -1190,8 +1213,29 @@ function mountChatPersona(ctx) {
   }).catch(() => {})
 
   // The transcript mounts, unmounts and streams under `body`, so watch from
-  // there and let the debounce keep streaming tokens cheap.
-  const observer = new MutationObserver(later)
+  // there and let the debounce keep streaming tokens cheap. A reply that has
+  // never been stamped is the exception: it must be dressed before its first
+  // paint, because the header line it earns (and the avatar in it) reserves
+  // 22px — applied a debounce later the bubble paints short and then jumps.
+  // Only a mutation that brings a reply along can need an immediate stamp — a
+  // streaming token or a collapsing disclosure cannot — so the check looks at the
+  // added nodes instead of scanning the whole transcript on every batch.
+  const carriesTurn = node =>
+    node.nodeType === 1 && (node.matches?.(AGENT_TURN_SEL) || Boolean(node.querySelector?.(AGENT_TURN_SEL)))
+  const observer = new MutationObserver(records => {
+    let stamp = false
+    let faceStale = false
+    for (const record of records) {
+      // A roster face is painted by its own plugin (a shape draws its first
+      // frame, a pet photo swaps in): that makes the memo wrong, so drop it and
+      // let the debounced pass take the slow path.
+      if (record.target?.closest?.('[data-roster-key]')) faceStale = true
+      for (const node of record.addedNodes) if (carriesTurn(node)) stamp = true
+    }
+    if (faceStale) faceMemo = { name: null, at: 0, node: null }
+    if (stamp) hydrate(true)
+    later()
+  })
   observer.observe(document.body, { childList: true, subtree: true })
   const reidentify = () => { me = { name: ownerKey() }; load() }
   const unsubs = [
@@ -1254,6 +1298,51 @@ function FirstRun({ storage }) {
 }
 
 // Compact panel chooser anchored to the native right-sidebar toggle.
+// A chat paints its empty state before its history arrives: the greeting flashes
+// on every bot switch and the composer jumps from the middle of the pane to the
+// bottom when the messages land. Holding the empty state for one beat swallows
+// the load — a chat that is genuinely empty still greets you a moment later, and
+// a chat that is loading never shows the greeting at all.
+function mountIntroHold(ctx) {
+  const HOLD_MS = 400
+  const INTRO_SEL = '[data-slot="aui_intro"]'
+  let timer = 0
+  const intros = () => document.querySelectorAll(INTRO_SEL)
+  const release = () => {
+    for (const intro of intros()) intro.removeAttribute('data-rounded-hold')
+  }
+  const arm = () => {
+    const found = intros()
+    if (!found.length) return
+    for (const intro of found) intro.setAttribute('data-rounded-hold', '')
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = 0
+      release()
+    }, HOLD_MS)
+  }
+  // Only nodes that are an intro (or contain one) can arm the hold, so streaming
+  // a reply — hundreds of mutations — costs one `matches` call each, not a
+  // whole-document scan per token.
+  const carriesIntro = node => node.nodeType === 1 && (node.matches?.(INTRO_SEL) || Boolean(node.querySelector?.(INTRO_SEL)))
+  const observer = new MutationObserver(records => {
+    for (const record of records) for (const node of record.addedNodes) if (carriesIntro(node)) return arm()
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+  const unsubs = [
+    host.state.focusedSessionProfile?.subscribe?.(arm),
+    host.state.focusedSessionOwner?.subscribe?.(arm),
+    host.state.profile.subscribe(arm)
+  ].filter(Boolean)
+  arm()
+  ctx.onDispose(() => {
+    observer.disconnect()
+    clearTimeout(timer)
+    unsubs.forEach(u => u())
+    release()
+  })
+}
+
 function mountPanelChooser(ctx) {
   const panel = document.createElement('div')
   panel.id = 'rounded-panel-chooser'
@@ -1455,6 +1544,7 @@ export default {
     ensureMoreRow()
     mountProfileRow(ctx)
     mountChatPersona(ctx)
+    mountIntroHold(ctx)
     ctx.setInterval(() => {
       ensureSearchButton()
       ensureMoreRow()
