@@ -7,6 +7,7 @@
  *   3. Solid colors: non-transparent design optimized for Linux (Omarchy/Hyprland), macOS, and Windows.
  *   4. 12 editor palettes registered via the THEMES_AREA contribution.
  *   5. Centered reading column, rounded composer, and Claude-inspired ergonomics.
+ *   6. Chat persona: every reply carries the profile avatar + speaker label and answers in its own bubble.
  *
  * Repo: https://github.com/danyakmallun9999/hermes-skin-rounded
  */
@@ -632,7 +633,65 @@ ${S} .composer-human-message {
   line-height: var(--conversation-line-height);
 }
 
-/* Assistant turn: plain text, full column, generous rhythm. */
+/* Assistant turn: a counterpart with a profile, answering in its own bubble.
+   The human turn is already a glass card on the right; the reply mirrors it on
+   the left, avatar gutter first, so the transcript reads as a conversation
+   instead of prose under a prompt. */
+${S} [data-slot="aui_assistant-message-root"] {
+  --rounded-agent-avatar: 1.875rem;
+  --rounded-agent-gutter: 0.625rem;
+  position: relative;
+  padding-left: calc(var(--rounded-agent-avatar) + var(--rounded-agent-gutter));
+}
+${S} [data-slot="aui_assistant-message-root"]::before {
+  content: attr(data-rounded-agent-initial);
+  position: absolute;
+  top: 0.125rem;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: var(--rounded-agent-avatar);
+  height: var(--rounded-agent-avatar);
+  border-radius: 50%;
+  background: var(--rounded-agent-color, var(--dt-primary));
+  color: var(--dt-primary-foreground);
+  font-family: var(--dt-font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+/* Speaker label once per run of replies, then the avatar sits level with them. */
+${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head] { padding-top: 1.3125rem; }
+${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::before { top: 1.4375rem; }
+${S} [data-slot="aui_assistant-message-root"][data-rounded-agent-head]::after {
+  content: attr(data-rounded-agent-label);
+  position: absolute;
+  top: 0.125rem;
+  left: calc(var(--rounded-agent-avatar) + var(--rounded-agent-gutter));
+  max-width: calc(100% - var(--rounded-agent-avatar) - var(--rounded-agent-gutter));
+  overflow: hidden;
+  color: var(--dt-muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+${S} [data-slot="aui_assistant-message-root"] > [data-slot="aui_assistant-message-content"] {
+  min-width: 0;
+  padding: 0.625rem 1rem;
+  border-radius: 1.125rem 1.125rem 1.125rem 0.375rem;
+  background: color-mix(in srgb, var(--dt-foreground) 5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dt-foreground) 7%, transparent);
+}
+/* Nothing to wrap while the first token is still in flight. */
+${S} [data-slot="aui_assistant-message-root"]:not(:has([data-slot="aui_assistant-message-content"] > *)) > [data-slot="aui_assistant-message-content"] {
+  background: transparent;
+  box-shadow: none;
+}
 ${S} [data-slot="aui_assistant-message-content"] { font-family: var(--dt-font-sans); }
 ${S} .aui-md.prose { padding-left: 0; }
 ${S} .aui-md.prose h1, ${S} .aui-md.prose h2, ${S} .aui-md.prose h3 {
@@ -883,6 +942,83 @@ function mountProfileRow(ctx) {
   })
 }
 
+// ── Chat persona: the reply reads as a counterpart, not as prose ────────────
+// CSS draws the avatar and the bubble; the identity (colour, initial, name +
+// model) can only come from the SDK, so stamp it on each reply root. Same
+// source as the sidebar account row, so both always agree.
+
+const AGENT_TURN_SEL = '[data-slot="aui_assistant-message-root"]'
+
+function mountChatPersona(ctx) {
+  let me = { name: profileKey(host.state.profile.get()) }
+  let timer = 0
+
+  const identity = () => {
+    const name = label(me)
+    const model = shortModel(host.state.model.get())
+    return {
+      color: sdk.profileColor?.(me.name) ?? '',
+      initial: (name || 'A').slice(0, 1),
+      label: model ? `${name} · ${model}` : name
+    }
+  }
+
+  const decorate = node => {
+    const who = identity()
+    if (who.color) node.style.setProperty('--rounded-agent-color', who.color)
+    node.setAttribute('data-rounded-agent-initial', who.initial)
+    node.setAttribute('data-rounded-agent-label', who.label)
+    // Label the speaker once per run of replies, the way a chat app does.
+    const prev = node.previousElementSibling
+    node.toggleAttribute('data-rounded-agent-head', !(prev && prev.matches(AGENT_TURN_SEL)))
+  }
+
+  // `fresh` only picks up replies that were never stamped, so a streaming turn
+  // does not re-walk the whole transcript. An identity change takes the slow
+  // path and re-stamps everything.
+  const hydrate = fresh => {
+    const nodes = fresh
+      ? document.querySelectorAll(`${AGENT_TURN_SEL}:not([data-rounded-agent-initial])`)
+      : document.querySelectorAll(AGENT_TURN_SEL)
+    for (const node of nodes) decorate(node)
+  }
+  const later = () => {
+    if (timer) return
+    timer = setTimeout(() => { timer = 0; hydrate(true) }, 150)
+  }
+
+  const load = () => host.profiles.list().then(r => {
+    const key = profileKey(host.state.profile.get())
+    me = (r.profiles ?? []).find(p => profileKey(p.name) === key) ?? { name: key }
+    hydrate(false)
+  }).catch(() => {})
+
+  // The transcript mounts, unmounts and streams under `body`, so watch from
+  // there and let the debounce keep streaming tokens cheap.
+  const observer = new MutationObserver(later)
+  observer.observe(document.body, { childList: true, subtree: true })
+  const unsubs = [
+    host.state.profile.subscribe(() => { me = { name: profileKey(host.state.profile.get()) }; load() }),
+    host.state.model.subscribe(() => hydrate(false))
+  ]
+
+  hydrate(false)
+  load()
+  ctx.setInterval(later, 2000) // the first paint can land before this mount
+
+  ctx.onDispose(() => {
+    observer.disconnect()
+    clearTimeout(timer)
+    unsubs.forEach(u => u())
+    for (const node of document.querySelectorAll(AGENT_TURN_SEL)) {
+      node.removeAttribute('data-rounded-agent-initial')
+      node.removeAttribute('data-rounded-agent-label')
+      node.removeAttribute('data-rounded-agent-head')
+      node.style.removeProperty('--rounded-agent-color')
+    }
+  })
+}
+
 // ── First-run: pick the theme, follow the system, clear the right rail ─────
 // The desktop stores theme + mode per profile, so each profile gets its own
 // one-time setup (`setup:<profile>`). The legacy global `setup` flag counts
@@ -1117,6 +1253,7 @@ export default {
     ensureSearchButton()
     ensureMoreRow()
     mountProfileRow(ctx)
+    mountChatPersona(ctx)
     ctx.setInterval(() => {
       ensureSearchButton()
       ensureMoreRow()

@@ -16,7 +16,9 @@ const sdk = { THEMES_AREA: 'themes', PALETTE_AREA: 'palette', TITLEBAR_AREAS: { 
   host: { state: { profile: atom('default'), model: atom('') }, profiles: { list: async () => ({ profiles: [] }) } } }
 let source = readFileSync(new URL('./plugin.js', import.meta.url), 'utf8')
 source = source.replace(/^import .*$/gm, '').replace('export default {', 'globalThis.plugin = {')
-const sandbox = { sdk, document, window: { addEventListener() {}, removeEventListener() {} }, Date, setTimeout, jsx() {}, useEffect() {} }
+class MutationObserverStub { static observed = 0; observe() { MutationObserverStub.observed++ } disconnect() {} }
+const sandbox = { sdk, document, window: { addEventListener() {}, removeEventListener() {} }, Date, setTimeout,
+  MutationObserver: MutationObserverStub, clearTimeout, jsx() {}, useEffect() {} }
 vm.createContext(sandbox)
 vm.runInContext(source, sandbox)
 assert.equal(sandbox.plugin.id, 'hermes-skin-rounded')
@@ -29,5 +31,8 @@ assert.equal(new Set(themes.map(t => t.data.name)).size, 12)
 assert.ok(themes.every(t => t.data.name === 'rounded' || t.data.name.startsWith('rounded-')))
 assert.ok(elements.some(el => el.textContent?.includes('border-radius: var(--rounded-panel-radius)')))
 assert.ok(elements.some(el => el.textContent?.includes('data-hermes-theme^="rounded"')))
+// The chat persona watch is part of register(), not an opt-in: the reply
+// bubbles mean nothing without the profile stamped on them.
+assert.equal(MutationObserverStub.observed, 1, 'register must mount the chat persona watcher')
 for (const dispose of disposers.reverse()) dispose()
 console.log('PASS: plugin registers 12 unique Rounded themes, injects scoped CSS, and disposes without errors.')

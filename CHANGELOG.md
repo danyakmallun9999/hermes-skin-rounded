@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+
+- The transcript now reads as a conversation with someone: every assistant turn gets a circular avatar in a left gutter — the active profile's colour and initial, the same identity the sidebar account row shows — and the profile name plus model as a speaker label once per run of replies.
+- Replies get their own chat box: the same 18px radius and 10/16px padding as the human bubble, one shade quieter over `--dt-foreground`, with the bottom-left corner squared toward the avatar. Empty placeholder turns draw no empty box.
+- Identity is stamped from `host.state.profile` / `host.state.model` / `host.profiles`, so switching profile or model re-labels the replies already on screen; a new reply appended by streaming is picked up without remounting the thread.
+- `test-chat.mjs` (Chromium): avatar colour/size/glyph, speaker label once per run, bubble geometry and surface, late and empty replies, profile switch, and a clean uninstall. `test.mjs` asserts `register()` mounts the persona watcher.
+
 ## 1.3.2
 
 - The chooser's Terminal tile opens through `host.revealPane('terminal')` again. `view.showTerminal` is not on `PLUGIN_APP_ACTIONS`, so gating the tile on `listActions()` disabled it — and it is a toggle anyway, which closed a terminal that was already on screen.
