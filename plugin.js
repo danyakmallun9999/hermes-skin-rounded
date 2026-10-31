@@ -544,6 +544,33 @@ ${S} [data-zone-tabstrip] [role="tab"] .uppercase {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+/* The sidebar tab strip can mount before the root theme attribute is
+   hydrated. These structural rules are intentionally unscoped to the theme:
+   this stylesheet exists only while Rounded is loaded, so the first paint is
+   styled too. */
+[data-zone-tabstrip] [role="tab"] {
+  border-radius: 8px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+[data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase {
+  font-size: 0 !important;
+}
+[data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::after {
+  content: "Home" !important;
+  font-size: 0.875rem !important;
+}
+[data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase {
+  font-size: 0 !important;
+}
+[data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::after {
+  content: "Bots" !important;
+  font-size: 0.875rem !important;
+}
+[data-zone-tabstrip] [role="tab"][data-tree-tab*="terminal"] {
+  display: none !important;
+}
+
 /* Keep the active thumb correct as soon as aria-selected is mounted. */
 ${S} [data-zone-tabstrip] [role="tab"][aria-selected="true"] {
   background: var(--claude-seg-thumb) !important;
