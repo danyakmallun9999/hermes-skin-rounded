@@ -1684,6 +1684,11 @@ export default {
         homeTab.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
         homeTab.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0 }))
         homeTab.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        // Reset the restored workspace/session to a genuinely fresh draft.
+        // The sidebar's New session control owns the correct routing and
+        // workspace context, so prefer it over manipulating layout atoms.
+        const newSession = document.querySelector('button[aria-label="New session"]')
+        if (newSession) newSession.click()
         stopHomeTimer()
       } else if (homeAttempts >= 20) {
         stopHomeTimer()
