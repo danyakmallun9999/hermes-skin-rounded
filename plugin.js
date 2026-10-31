@@ -490,8 +490,13 @@ ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots"; }
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::before { content: "\\ea85"; }
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::after { content: "Terminal"; }
-/* Hide terminal tab from sidebar — desktop terminal session disabled */
-${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] { display: none !important; }
+/* Hide terminal tab everywhere — desktop terminal session disabled. The
+   tab can be rendered by a pane group whose sidebar-content marker is not
+   inside the same tree-group, so do not scope this to that ancestor. */
+${S} [data-tree-tab="terminal"],
+${S} [data-tree-tab^="terminal:"],
+${S} [data-tree-tab$=":terminal"],
+${S} [data-tree-tab*="terminal"] { display: none !important; }
 /* Hide scheduled-jobs (cron) pane from right sidebar — open via sidebar nav instead */
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [data-tree-tab="cron"],
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [data-tree-tab*="cron"] { display: none !important; }
