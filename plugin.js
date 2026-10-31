@@ -1642,6 +1642,9 @@ function mountPanelChooser(ctx) {
   const trigger = e => {
     const button = e.target.closest?.('[data-tour="right-pane-toggle"]')
     if (!button || !document.documentElement.getAttribute('data-hermes-theme')?.startsWith(THEME_NAME)) return
+    // Ignore synthetic startup/layout events. The chooser is user-invoked only;
+    // restoring a loading right-rail state must never open it automatically.
+    if (!e.isTrusted) return
     e.preventDefault()
     e.stopImmediatePropagation()
     if (!panel.hidden) close()
