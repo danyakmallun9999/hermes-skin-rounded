@@ -1613,6 +1613,11 @@ export default {
     document.head.appendChild(style)
     ctx.onDispose(() => style.remove())
 
+    // Apply immediately, before pane tabs mount. Waiting for the titlebar
+    // contribution/FirstRun component lets Home, Bots, and unnamed chats paint
+    // once with the default chrome and only acquire Rounded after a click.
+    requestTheme(THEME_NAME)
+
     mountPanelChooser(ctx)
     paintGreeting()
     ctx.setInterval(paintGreeting, 5 * 60 * 1000)
