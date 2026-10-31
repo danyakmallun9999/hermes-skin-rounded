@@ -571,6 +571,31 @@ ${S} [data-zone-tabstrip] [role="tab"] .uppercase {
   display: none !important;
 }
 
+[data-zone-tabstrip] [role="tab"] {
+  position: relative;
+  isolation: isolate;
+}
+[data-zone-tabstrip] [role="tab"]::before {
+  content: "";
+  position: absolute;
+  inset: 3px 2px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: -1;
+  background: transparent;
+}
+[data-zone-tabstrip] [role="tab"][aria-selected="true"]::before,
+[data-zone-tabstrip] [role="tab"][data-active="true"]::before {
+  background: var(--dt-card, var(--ui-control-background)) !important;
+}
+[data-zone-tabstrip] [role="tab"]:hover::before {
+  background: var(--ui-control-hover-background) !important;
+}
+[data-zone-tabstrip] [role="tab"][aria-selected="true"] .uppercase,
+[data-zone-tabstrip] [role="tab"][data-active="true"] .uppercase {
+  color: var(--ui-text-primary) !important;
+}
+
 /* Keep the active thumb correct as soon as aria-selected is mounted. */
 ${S} [data-zone-tabstrip] [role="tab"][aria-selected="true"] {
   background: var(--claude-seg-thumb) !important;
