@@ -1672,6 +1672,24 @@ export default {
     // once with the default chrome and only acquire Rounded after a click.
     requestTheme(THEME_NAME)
 
+    // Always start in Home. Hermes restores the last active pane (often Bots)
+    // before the skin mounts; normalize that persisted state so the first paint
+    // is deterministic and the Home sidebar chrome is available immediately.
+    let homeAttempts = 0
+    let stopHomeTimer = () => {}
+    stopHomeTimer = ctx.setInterval(() => {
+      homeAttempts += 1
+      const homeTab = document.querySelector('[data-tree-tab="sessions"]')
+      if (homeTab) {
+        homeTab.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }))
+        homeTab.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0 }))
+        homeTab.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        stopHomeTimer()
+      } else if (homeAttempts >= 20) {
+        stopHomeTimer()
+      }
+    }, 50)
+
     mountPanelChooser(ctx)
     paintGreeting()
     ctx.setInterval(paintGreeting, 5 * 60 * 1000)
