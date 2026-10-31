@@ -484,11 +484,14 @@ ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] .
   font-family: var(--dt-font-sans); font-size: 0.875rem; line-height: 1; font-weight: 500;
   white-space: nowrap;
 }
-${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="sessions"] .uppercase::before { content: "\\eb06"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="sessions"] .uppercase::before { content: none !important; }
+
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="sessions"] .uppercase::after { content: "Home"; }
-${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="hermes-bots:pane"] .uppercase::before { content: "\\ec20"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="hermes-bots:pane"] .uppercase::before { content: none !important; }
+
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots"; }
-${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::before { content: "\\ea85"; }
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::before { content: none !important; }
+
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::after { content: "Terminal"; }
 /* Hide terminal tab everywhere — desktop terminal session disabled. The
    tab can be rendered by a pane group whose sidebar-content marker is not
@@ -508,9 +511,23 @@ ${S} [data-zone-tabstrip] [role="tab"] {
   border: 0 !important;
   box-shadow: none !important;
 }
-${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::before { content: "\\\\eb06" !important; }
+${S} [data-zone-tabstrip] [role="tab"] .uppercase {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0 !important;
+}
+${S} [data-zone-tabstrip] [role="tab"] .uppercase::after {
+  font-family: var(--dt-font-sans);
+  font-size: 0.875rem !important;
+  line-height: 1;
+  font-weight: 500;
+  white-space: nowrap;
+}
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::before { content: none !important; }
+
 ${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::after { content: "Home" !important; }
-${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::before { content: "\\\\ec20" !important; }
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::before { content: none !important; }
+
 ${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots" !important; }
 ${S} [data-zone-tabstrip] [role="tab"][data-tree-tab*="terminal"] { display: none !important; }
 /* Keep the active thumb correct as soon as aria-selected is mounted. */
