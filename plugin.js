@@ -511,12 +511,14 @@ ${S} [data-zone-tabstrip] [role="tab"] {
   border: 0 !important;
   box-shadow: none !important;
 }
-${S} [data-zone-tabstrip] [role="tab"] .uppercase {
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase,
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase {
   text-transform: none;
   letter-spacing: 0;
   font-size: 0 !important;
 }
-${S} [data-zone-tabstrip] [role="tab"] .uppercase::after {
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::after,
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::after {
   font-family: var(--dt-font-sans);
   font-size: 0.875rem !important;
   line-height: 1;
