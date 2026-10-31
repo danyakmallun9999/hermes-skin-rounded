@@ -596,6 +596,16 @@ ${S} [data-zone-tabstrip] [role="tab"] .uppercase {
   color: var(--ui-text-primary) !important;
 }
 
+/* The right rail is an optional utility rail, not a persisted project
+   workspace. Do not resurrect the Files/project pane when Show right sidebar
+   is opened; Home/chat remains the default surface. */
+[data-tree-group]:has([data-slot="sidebar-content"]) [data-tree-tab="files"],
+[data-tree-group]:has([data-slot="sidebar-content"]) [data-tree-tab="file-explorer"],
+[data-tree-group]:has([data-slot="sidebar-content"]) [data-tree-tab="project"],
+[data-tree-group]:has([data-slot="sidebar-content"]) [data-tree-tab="workspace"] {
+  display: none !important;
+}
+
 /* Keep the active thumb correct as soon as aria-selected is mounted. */
 ${S} [data-zone-tabstrip] [role="tab"][aria-selected="true"] {
   background: var(--claude-seg-thumb) !important;
