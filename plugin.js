@@ -530,6 +530,18 @@ ${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .upperc
 
 ${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots" !important; }
 ${S} [data-zone-tabstrip] [role="tab"][data-tree-tab*="terminal"] { display: none !important; }
+${S} [data-zone-tabstrip] [role="tab"] .uppercase:empty::after { content: "New chat" !important; }
+/* Unnamed conversation tabs get the same Rounded chrome on first mount. */
+${S} [data-zone-tabstrip] [role="tab"] .pane-tab-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+${S} [data-zone-tabstrip] [role="tab"] .uppercase {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 /* Keep the active thumb correct as soon as aria-selected is mounted. */
 ${S} [data-zone-tabstrip] [role="tab"][aria-selected="true"] {
   background: var(--claude-seg-thumb) !important;
@@ -1385,10 +1397,13 @@ function FirstRun({ storage }) {
   const profile = profileKey(useValue(host.state.profile))
 
   useEffect(() => {
-    if (isSetUp(storage, profile)) return
-    // Unconditional: right after a profile swap `themeName` can still be the
-    // previous profile's for a render. Both writes land on the live profile.
+    const firstRun = !isSetUp(storage, profile)
+    // Re-assert the skin on every mount/profile activation. Hermes can restore
+    // the pane tree before the theme atom finishes hydrating; without this,
+    // the first Home/Bots or unnamed-chat view paints in the default chrome
+    // until a tab click causes a repaint.
     requestTheme(THEME_NAME)
+    if (!firstRun) return
     setMode('system')
     // Claude has no file rail. Close it once; the titlebar toggle brings it back.
     const rail = document.querySelector('button[aria-label="Hide right sidebar"]')
