@@ -553,17 +553,17 @@ ${S} [data-zone-tabstrip] [role="tab"] .uppercase {
   border: 0 !important;
   box-shadow: none !important;
 }
-[data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase {
+[data-zone-tabstrip] [role="tab"][data-tree-tab*="session"] .uppercase {
   font-size: 0 !important;
 }
-[data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::after {
+[data-zone-tabstrip] [role="tab"][data-tree-tab*="session"] .uppercase::after {
   content: "Home" !important;
   font-size: 0.875rem !important;
 }
-[data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase {
+[data-zone-tabstrip] [role="tab"][data-tree-tab*="bot"] .uppercase {
   font-size: 0 !important;
 }
-[data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::after {
+[data-zone-tabstrip] [role="tab"][data-tree-tab*="bot"] .uppercase::after {
   content: "Bots" !important;
   font-size: 0.875rem !important;
 }
