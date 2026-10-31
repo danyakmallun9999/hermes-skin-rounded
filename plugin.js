@@ -1689,6 +1689,11 @@ export default {
         // workspace context, so prefer it over manipulating layout atoms.
         const newSession = document.querySelector('button[aria-label="New session"]')
         if (newSession) newSession.click()
+        // Do not restore a project/files workspace on startup. The right rail
+        // remains available through the Show right sidebar control, but starts
+        // closed for a genuinely fresh Hermes view.
+        const rightRail = document.querySelector('button[aria-label="Hide right sidebar"]')
+        if (rightRail) rightRail.click()
         stopHomeTimer()
       } else if (homeAttempts >= 20) {
         stopHomeTimer()
