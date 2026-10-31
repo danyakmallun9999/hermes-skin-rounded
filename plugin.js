@@ -490,6 +490,8 @@ ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots"; }
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::before { content: "\\ea85"; }
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::after { content: "Terminal"; }
+/* Hide terminal tab from sidebar — desktop terminal session disabled */
+${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] { display: none !important; }
 /* Three tabs: a tighter icon gap, and in a narrow sidebar smaller type too,
    so "Terminal" fits whole (the strip is a size container for the query). */
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] { container-type: inline-size; }
@@ -1417,7 +1419,6 @@ function mountPanelChooser(ctx) {
   }
   const actions = [
     ['Files', 'files', 'view.showFiles'],
-    ['Terminal', 'terminal', 'view.showTerminal'],
     ['Browser', 'globe', 'view.showBrowser'],
     ['Review', 'diff', 'view.toggleReview'],
     ['Scheduled jobs', 'calendar', 'nav.cron']
