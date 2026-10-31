@@ -280,7 +280,7 @@ ${S} {
   --conversation-turn-gap: 1.5rem;
   --turn-block-gap: 1rem;
   --message-text-indent: 0;
-  --sticky-human-top: 0.5rem;
+  --sticky-human-top: unset;
   /* Composer proportions. */
   --composer-surface-pad-x: 0.875rem;
   --composer-surface-pad-y: 0.75rem;
@@ -627,7 +627,8 @@ ${S} input[aria-label="Search sessions"] { font-size: 0.8125rem; }
 ${S} [data-slot="aui_thread-content"] { padding-left: 1.5rem; padding-right: 1.5rem; }
 
 /* User turn: a soft bubble that hugs its text, on the right. */
-${S} [data-slot="aui_user-message-root"] { align-items: flex-end; }
+${S} [data-slot="aui_user-message-root"] { align-items: flex-end; position: relative !important; top: unset !important; }
+${S} [data-slot="aui_user-message-root"] .sticky-human-clamp { max-height: none; -webkit-mask-image: none; mask-image: none; cursor: auto; }
 ${S} [data-slot="aui_user-bubble-actions"] { width: auto; max-width: 80%; }
 ${S} .composer-human-message {
   border-radius: 1.125rem !important;
