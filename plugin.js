@@ -492,6 +492,9 @@ ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] .uppercase::after { content: "Terminal"; }
 /* Hide terminal tab from sidebar — desktop terminal session disabled */
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] [data-tree-tab="terminal"] { display: none !important; }
+/* Hide scheduled-jobs (cron) pane from right sidebar — open via sidebar nav instead */
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [data-tree-tab="cron"],
+${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [data-tree-tab*="cron"] { display: none !important; }
 /* Three tabs: a tighter icon gap, and in a narrow sidebar smaller type too,
    so "Terminal" fits whole (the strip is a size container for the query). */
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] { container-type: inline-size; }
@@ -1421,7 +1424,7 @@ function mountPanelChooser(ctx) {
     ['Files', 'files', 'view.showFiles'],
     ['Browser', 'globe', 'view.showBrowser'],
     ['Review', 'diff', 'view.toggleReview'],
-    ['Scheduled jobs', 'calendar', 'nav.cron']
+    ['Scheduled jobs', 'calendar', 'sidebar.cron']
   ]
   const available = id => ctx.listActions?.().some(action => action.id === id)
   // The terminal is deliberately NOT on the plugin allowlist — `PLUGIN_APP_ACTIONS`
@@ -1461,7 +1464,7 @@ function mountPanelChooser(ctx) {
       const text = document.createElement('span')
       text.textContent = label
       item.append(glyph, text)
-      const enabled = action === 'view.showTerminal' ? canRevealTerminal() : available(action)
+      const enabled = action === 'view.showTerminal' ? canRevealTerminal() : action === 'sidebar.cron' ? true : available(action)
       item.disabled = !enabled
       if (!enabled) {
         item.style.opacity = '0.4'
@@ -1494,6 +1497,12 @@ function mountPanelChooser(ctx) {
               })
             }
           }, 1200)
+          return
+        }
+        if (action === 'sidebar.cron') {
+          const cronBtn = document.querySelector('[data-tour="sidebar-nav-cron"]')
+          if (cronBtn) cronBtn.click()
+          else host.notify?.({ kind: 'error', message: 'Scheduled jobs button not found in sidebar.' })
           return
         }
         if (!available(action)) return
