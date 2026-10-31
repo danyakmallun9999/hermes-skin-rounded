@@ -500,6 +500,24 @@ ${S} [data-tree-tab*="terminal"] { display: none !important; }
 /* Hide scheduled-jobs (cron) pane from right sidebar — open via sidebar nav instead */
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [data-tree-tab="cron"],
 ${S} [data-tree-group]:not(:has([data-slot="sidebar-content"])) [data-zone-tabstrip] [data-tree-tab*="cron"] { display: none !important; }
+/* Fallback for the initial pane mount: some layouts attach the sidebar
+   tabstrip before its tree-group/sidebar-content marker. Keep the Rounded
+   labels and segmented styling active without requiring a tab click. */
+${S} [data-zone-tabstrip] [role="tab"] {
+  border-radius: 8px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::before { content: "\\\\eb06" !important; }
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="sessions"] .uppercase::after { content: "Home" !important; }
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::before { content: "\\\\ec20" !important; }
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab="hermes-bots:pane"] .uppercase::after { content: "Bots" !important; }
+${S} [data-zone-tabstrip] [role="tab"][data-tree-tab*="terminal"] { display: none !important; }
+/* Keep the active thumb correct as soon as aria-selected is mounted. */
+${S} [data-zone-tabstrip] [role="tab"][aria-selected="true"] {
+  background: var(--claude-seg-thumb) !important;
+  color: var(--dt-foreground) !important;
+}
 /* Three tabs: a tighter icon gap, and in a narrow sidebar smaller type too,
    so "Terminal" fits whole (the strip is a size container for the query). */
 ${S} [data-tree-group]:has([data-slot="sidebar-content"]) [data-zone-tabstrip] { container-type: inline-size; }
