@@ -1537,6 +1537,20 @@ function hideRefreshGatewayGroups() {
   }
 }
 
+function hideGatewayDisconnectedNotice() {
+  const notices = [...document.querySelectorAll('*')]
+    .filter(node => /^hermes gateway is not connected$/i.test((node.textContent || '').trim()))
+    .filter(node => ![...node.children].some(child => /^hermes gateway is not connected$/i.test((child.textContent || '').trim())))
+  for (const notice of notices) {
+    notice.style.setProperty('display', 'none', 'important')
+    notice.setAttribute('aria-hidden', 'true')
+    const parent = notice.parentElement
+    if (!parent) continue
+    const visible = [...parent.children].filter(child => child !== notice && getComputedStyle(child).display !== 'none')
+    if (!visible.length) parent.style.setProperty('display', 'none', 'important')
+  }
+}
+
 function mountPanelChooser(ctx) {
   const panel = document.createElement('div')
   panel.id = 'rounded-panel-chooser'
@@ -1781,10 +1795,12 @@ export default {
     mountChatPersona(ctx)
     mountIntroHold(ctx)
     hideRefreshGatewayGroups()
+    hideGatewayDisconnectedNotice()
     ctx.setInterval(() => {
       ensureSearchButton()
       ensureMoreRow()
       hideRefreshGatewayGroups()
+      hideGatewayDisconnectedNotice()
     }, 1000)
     ctx.onDispose(() => document.getElementById('rounded-skin-search')?.remove())
     ctx.onDispose(() => {
