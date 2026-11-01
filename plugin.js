@@ -878,6 +878,19 @@ ${S} [data-chat-surface] [data-slot="aui_thinking-disclosure"] {
   margin: 0 !important;
   padding: 0 !important;
 }
+@keyframes rounded-bot-working {
+  0%, 100% { opacity: .42; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-1px); }
+}
+${S} [data-chat-surface]:has([data-slot="aui_thinking-disclosure"] .shimmer) [data-slot="composer-dock"]::before {
+  content: "Hermes sedang bekerja ...";
+  display: block;
+  margin: 0 0 .35rem .25rem;
+  color: var(--dt-muted-foreground);
+  font-size: .7rem;
+  letter-spacing: .01em;
+  animation: rounded-bot-working 1.2s ease-in-out infinite;
+}
 ${S} [data-slot="aui_thinking-disclosure"] [data-slot="aui_thinking-body"] {
   padding-left: 0;
   color: color-mix(in srgb, var(--dt-muted-foreground) 82%, transparent);
