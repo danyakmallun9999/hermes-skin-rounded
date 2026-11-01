@@ -37,14 +37,14 @@ You need a Hermes Desktop build with runtime desktop plugins support (**Capabili
 
 1. Open **Capabilities ▸ Plugins**.
 2. Click **Install from Git**.
-3. Paste `danyakmallun9999/hermes-skin-rounded` and click **Install**.
+3. Paste `danyakmallun/hermes-skin-rounded` and click **Install**.
 
 ### Option 2: Via Git
 
 Clone directly into your Hermes desktop plugins directory:
 
 ```bash
-git clone https://github.com/danyakmallun9999/hermes-skin-rounded.git ~/.hermes/desktop-plugins/hermes-skin-rounded
+git clone https://github.com/danyakmallun/hermes-skin-rounded.git ~/.hermes/desktop-plugins/hermes-skin-rounded
 ```
 
 ### Option 3: Manual Installation
@@ -71,7 +71,7 @@ Everything is configured inside `plugin.js` and hot-reloads on save:
 ## Credits & License
 
 Based on the original Claude skin concept by [Otto Rothmund](https://github.com/ottoRothmund/hermes-claude-skin).
-Maintained and updated with rounded layouts and unified solid headers by [Danya Kmallun](https://github.com/danyakmallun9999).
+Maintained and updated with rounded layouts and unified solid headers by [Danya Kmallun](https://github.com/danyakmallun).
 
 Licensed under the [MIT License](LICENSE).
 
