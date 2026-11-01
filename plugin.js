@@ -1524,6 +1524,19 @@ function mountIntroHold(ctx) {
   })
 }
 
+function hideRefreshGatewayGroups() {
+  const buttons = [...document.querySelectorAll('button, a, [role="button"]')]
+    .filter(node => /^\s*refresh gateway groups\s*$/i.test(node.textContent || ''))
+  for (const button of buttons) {
+    button.style.setProperty('display', 'none', 'important')
+    button.setAttribute('aria-hidden', 'true')
+    const parent = button.parentElement
+    if (!parent) continue
+    const visible = [...parent.children].filter(child => child !== button && getComputedStyle(child).display !== 'none')
+    if (!visible.length) parent.style.setProperty('display', 'none', 'important')
+  }
+}
+
 function mountPanelChooser(ctx) {
   const panel = document.createElement('div')
   panel.id = 'rounded-panel-chooser'
@@ -1767,9 +1780,11 @@ export default {
     mountProfileRow(ctx)
     mountChatPersona(ctx)
     mountIntroHold(ctx)
+    hideRefreshGatewayGroups()
     ctx.setInterval(() => {
       ensureSearchButton()
       ensureMoreRow()
+      hideRefreshGatewayGroups()
     }, 1000)
     ctx.onDispose(() => document.getElementById('rounded-skin-search')?.remove())
     ctx.onDispose(() => {
