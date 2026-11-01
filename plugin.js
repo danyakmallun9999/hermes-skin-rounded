@@ -872,6 +872,12 @@ ${S} .aui-md.prose table { border-radius: 0.5rem; }
    (no .max-h-40 preview cap) keeps its full scroll. The native
    "Collapse thinking by default" preference still wins outright. */
 ${S} [data-slot="aui_thinking-disclosure"] { margin-bottom: 0.25rem; font-size: 0.75rem; }
+/* Bots chats stay focused on the answer: hide reasoning/tool activity cards. */
+${S} [data-chat-surface] [data-slot="aui_thinking-disclosure"] {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
 ${S} [data-slot="aui_thinking-disclosure"] [data-slot="aui_thinking-body"] {
   padding-left: 0;
   color: color-mix(in srgb, var(--dt-muted-foreground) 82%, transparent);
